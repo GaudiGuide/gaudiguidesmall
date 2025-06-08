@@ -1,6 +1,6 @@
 const supabase = window.supabase.createClient(
   "https://lfptdjesepqdoolcxppw.supabase.co",
-  "public-anon-key" // ← Ersetze durch deinen echten anon key
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxmcHRkamVzZXBxZG9vbGN4cHB3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQ4MDk3OTMsImV4cCI6MjA2MDM4NTc5M30.i67qj_tTDvx9_TJiWHCo_RT8EnS71ZV7LpJIvlAXiFg" // ← Ersetze durch deinen echten anon key
 );
 
 let map, marker = null, circle = null, showCircle = true;
