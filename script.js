@@ -1,4 +1,3 @@
-// Supabase Setup
 const supabase = window.supabase.createClient(
   "https://lfptdjesepqdoolcxppw.supabase.co",
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxmcHRkamVzZXBxZG9vbGN4cHB3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQ4MDk3OTMsImV4cCI6MjA2MDM4NTc5M30.i67qj_tTDvx9_TJiWHCo_RT8EnS71ZV7LpJIvlAXiFg"
@@ -50,7 +49,11 @@ function drawCircle(lat = userLat, lon = userLon) {
 
 async function loadLocationsWithRadius(lat, lon, radiusKm) {
   document.getElementById("loader").style.display = "block";
-  const { data, error } = await supabase.rpc("get_locations_within_radius", { lat_input: lat, lon_input: lon, radius_km: radiusKm });
+  const { data, error } = await supabase.rpc("get_locations_within_radius", {
+    lat_input: lat,
+    lon_input: lon,
+    radius_km: radiusKm
+  });
   if (error) {
     console.error("❌ Fehler beim Laden der Locations:", error);
     alert("Fehler beim Laden der Locations: " + error.message);
@@ -111,8 +114,10 @@ document.getElementById("auth-form").addEventListener("submit", async (e) => {
   const password = document.getElementById("auth-password").value;
   const status = document.getElementById("auth-status");
   status.textContent = "Wird verarbeitet...";
-  const result = authMode === "login" ? await supabase.auth.signIn({ email, password }) : await supabase.auth.signUp({ email, password });
-  const { error, user } = result;
+  const result = authMode === "login"
+    ? await supabase.auth.signIn({ email, password })
+    : await supabase.auth.signUp({ email, password });
+  const { error } = result;
   if (error) {
     status.textContent = "Fehler: " + error.message;
   } else {
@@ -199,6 +204,8 @@ document.getElementById("location-form").addEventListener("submit", async (e) =>
     drawCircle();
   }
 });
+
+let authMode = "login";
 
 document.getElementById("login-btn").onclick = toggleAuthModal;
 document.getElementById("register-btn").onclick = () => { authMode = "register"; switchAuthMode(); toggleAuthModal(); };
