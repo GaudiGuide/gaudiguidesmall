@@ -16,33 +16,25 @@ function initMap(position) {
   marker = L.marker([userLat, userLon]).addTo(map);
 
   try {
-    if (
-      !window.GeoSearch ||
-      typeof window.GeoSearch.OpenStreetMapProvider !== 'function' ||
-      typeof window.GeoSearch.GeoSearchControl !== 'function'
-    ) {
-      throw new Error("GeoSearch nicht korrekt geladen.");
-    }
-
     const provider = new window.GeoSearch.OpenStreetMapProvider();
     const searchControl = new window.GeoSearch.GeoSearchControl({
       provider,
-      style: 'bar',
+      showMarker: true,
+      showPopup: false,
+      retainZoomLevel: false,
+      animateZoom: true,
+      autoClose: true,
+      searchLabel: "Adresse eingeben…"
     });
 
-    if (typeof searchControl.addTo === 'function') {
-      map.addControl(searchControl);
-    } else {
-      throw new Error("GeoSearchControl konnte nicht hinzugefügt werden.");
-    }
+    map.addControl(searchControl);
 
     map.on("geosearch/showlocation", function (result) {
       drawCircle(result.location.y, result.location.x);
     });
-
   } catch (err) {
     console.error("❌ GeoSearch Fehler:", err.message);
-    alert("Die Suchfunktion konnte nicht geladen werden.");
+    alert("Suche konnte nicht geladen werden.");
   }
 
   document.getElementById("radius").addEventListener("input", () => drawCircle());
@@ -176,5 +168,5 @@ window.onload = () => {
       initMap({ coords: { latitude: userLat, longitude: userLon } });
     });
     updateAuthUI();
-  }, 300); // kurze Verzögerung für GeoSearch-Script
+  }, 300);
 };
