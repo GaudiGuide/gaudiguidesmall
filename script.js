@@ -17,11 +17,12 @@ function initMap(position) {
 
   try {
     const provider = new window.GeoSearch.OpenStreetMapProvider({
-  params: {
-    'accept-language': 'de',
-    countrycodes: 'de',
-  }
-});
+      params: {
+        'accept-language': 'de',
+        countrycodes: 'de',
+      }
+    });
+
     const searchControl = new window.GeoSearch.GeoSearchControl({
       provider,
       showMarker: true,
@@ -33,7 +34,6 @@ function initMap(position) {
     });
 
     map.addControl(searchControl);
-
     map.on("geosearch/showlocation", function (result) {
       drawCircle(result.location.y, result.location.x);
     });
@@ -105,20 +105,29 @@ async function updateAuthUI() {
   document.getElementById("location-form-section").style.display = loggedIn ? "block" : "none";
 }
 
-document.getElementById("login-btn").onclick = async () => {
-  const email = prompt("E-Mail:");
-  const password = prompt("Passwort:");
-  const { error } = await supabase.auth.signInWithPassword({ email, password });
-  if (error) alert("Fehler: " + error.message);
-  await updateAuthUI();
-};
+let authMode = "login";
 
-document.getElementById("register-btn").onclick = async () => {
-  const email = prompt("E-Mail:");
-  const password = prompt("Passwort (mind. 6 Zeichen):");
-  const { error } = await supabase.auth.signUp({ email, password });
-  if (error) alert("Fehler: " + error.message);
-  else alert("Registrierung erfolgreich. Bitte E-Mail bestätigen.");
+function toggleAuthModal() {
+  document.getElementById("auth-modal").classList.toggle("hidden");
+  document.getElementById("auth-status").textContent = "";
+}
+
+function switchAuthMode() {
+  authMode = authMode === "login" ? "register" : "login";
+  document.getElementById("auth-title").textContent = authMode === "login" ? "Login" : "Registrieren";
+  document.getElementById("auth-submit-btn").textContent = authMode === "login" ? "Anmelden" : "Registrieren";
+  document.getElementById("toggle-auth-mode").innerHTML =
+    authMode === "login"
+      ? 'Noch kein Konto? <a href="#" onclick="switchAuthMode()">Registrieren</a>'
+      : 'Bereits registriert? <a href="#" onclick="switchAuthMode()">Login</a>';
+  document.getElementById("auth-status").textContent = "";
+}
+
+document.getElementById("login-btn").onclick = toggleAuthModal;
+document.getElementById("register-btn").onclick = () => {
+  authMode = "register";
+  switchAuthMode();
+  toggleAuthModal();
 };
 
 document.getElementById("logout-btn").onclick = async () => {
@@ -130,6 +139,30 @@ document.getElementById("profile-btn").onclick = () => {
   const section = document.getElementById("profile-section");
   section.style.display = section.style.display === "none" ? "block" : "none";
 };
+
+document.getElementById("auth-form").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const email = document.getElementById("auth-email").value;
+  const password = document.getElementById("auth-password").value;
+  const statusEl = document.getElementById("auth-status");
+
+  try {
+    if (authMode === "login") {
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) throw error;
+    } else {
+      const { error } = await supabase.auth.signUp({ email, password });
+      if (error) throw error;
+      alert("Registrierung erfolgreich. Bitte E-Mail bestätigen.");
+    }
+
+    toggleAuthModal();
+    updateAuthUI();
+  } catch (err) {
+    statusEl.textContent = "Fehler: " + err.message;
+    statusEl.className = "status error";
+  }
+});
 
 document.getElementById("location-form").addEventListener("submit", async (e) => {
   e.preventDefault();
