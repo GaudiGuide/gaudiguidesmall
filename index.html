@@ -13,19 +13,9 @@
   <!-- Supabase -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
-  <!-- Leaflet -->
+  <!-- Leaflet & GeoSearch -->
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-
-  <!-- Leaflet GeoSearch (ESM fix) -->
-  <script type="module">
-    import {
-      OpenStreetMapProvider,
-      GeoSearchControl
-    } from 'https://unpkg.com/leaflet-geosearch@3.1.0/dist/leaflet-geosearch.esm.js';
-
-    window.OpenStreetMapProvider = OpenStreetMapProvider;
-    window.GeoSearchControl = GeoSearchControl;
-  </script>
+  <script src="https://unpkg.com/leaflet-geosearch@3.1.0/dist/bundle.min.js"></script>
 </head>
 <body>
   <header>
@@ -47,7 +37,6 @@
 
   <div id="loader">Lade Locations...</div>
 
-  <!-- Formulare -->
   <div class="container">
     <!-- Umkreis -->
     <div class="form-section">
@@ -57,7 +46,7 @@
       <button onclick="drawCircle()">Umkreis zeichnen</button>
     </div>
 
-    <!-- Location hinzufügen -->
+    <!-- Neue Location -->
     <div class="form-section" id="location-form-section" style="display:none;">
       <h3>Neue Location</h3>
       <form id="location-form">
@@ -86,7 +75,7 @@
     </div>
   </div>
 
-  <!-- Custom Script -->
+  <!-- Dein Script -->
   <script src="script.js"></script>
 </body>
 </html>
