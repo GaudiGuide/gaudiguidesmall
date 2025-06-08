@@ -68,14 +68,14 @@
     </div>
   </div>
 
-  <!-- Supabase JS -->
+  <!-- Supabase -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
-  <!-- Dein Script (muss VOR Leaflet geladen werden, damit window.onload funktioniert) -->
-  <script src="script.js" defer></script>
-
-  <!-- Leaflet & GeoSearch (nachgelagert, um Timing-Probleme zu vermeiden) -->
+  <!-- Leaflet & GeoSearch -->
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="https://unpkg.com/leaflet-geosearch@3.1.0/dist/bundle.min.js"></script>
+
+  <!-- Dein Script NACHDEM alles andere geladen wurde -->
+  <script src="script.js"></script>
 </body>
 </html>
