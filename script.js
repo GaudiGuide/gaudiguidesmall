@@ -101,7 +101,9 @@ async function loadLocationsWithRadius(lat, lon, radiusKm) {
       <strong>${loc.name}</strong><br>
       ${loc.description || ""}<br>
       <em>${loc.hours || ""}</em><br>
-      ${loc.address || ""}
+      ${loc.address || ""}<br>
+      ${loc.contact || ""}<br>
+      ${loc.image_url ? `<img src="${loc.image_url}" style="max-width:100px;">` : ""}
       ${isOwner ? "<br><em>(Eigene Location)</em>" : ""}
     `);
     supabaseMarkers.push(m);
@@ -170,39 +172,91 @@ document.getElementById("auth-form").addEventListener("submit", async (e) => {
   }
 });
 
+// Profil speichern mit Bild
 document.getElementById("profile-form").addEventListener("submit", async (e) => {
   e.preventDefault();
   const name = document.getElementById("profile-name").value;
-  const address = document.getElementById("profile-address").value;
+  const file = document.getElementById("profile-image").files[0];
   const user = supabase.auth.user();
-  await supabase.from("profiles").upsert([{ user_id: user.id, name, address }]);
-  document.getElementById("profile-status").textContent = "Profil gespeichert!";
+
+  let imageUrl = null;
+
+  if (file) {
+    const path = `${user.id}/${Date.now()}_${file.name}`;
+    const { error: uploadError } = await supabase.storage
+      .from("avatars")
+      .upload(path, file, { upsert: true });
+
+    if (uploadError) {
+      document.getElementById("profile-status").textContent = "Fehler beim Hochladen: " + uploadError.message;
+      return;
+    }
+
+    imageUrl = supabase.storage.from("avatars").getPublicUrl(path).publicURL;
+  }
+
+  const { error } = await supabase
+    .from("profiles")
+    .upsert([{ user_id: user.id, name, avatar_url: imageUrl }]);
+
+  if (!error) {
+    document.getElementById("profile-status").textContent = "Profil gespeichert!";
+    if (imageUrl) {
+      document.getElementById("profile-image-preview").innerHTML = `<img src="${imageUrl}" alt="Profilbild">`;
+    }
+  } else {
+    document.getElementById("profile-status").textContent = "Fehler: " + error.message;
+  }
 });
 
+// Profil laden
 async function loadProfileData() {
   const user = supabase.auth.user();
   if (!user) return;
   const { data, error } = await supabase.from("profiles").select("*").eq("user_id", user.id).single();
   if (!error && data) {
     document.getElementById("profile-name").value = data.name || "";
-    document.getElementById("profile-address").value = data.address || "";
+    if (data.avatar_url) {
+      document.getElementById("profile-image-preview").innerHTML = `<img src="${data.avatar_url}" alt="Profilbild">`;
+    }
   }
 }
 
+// Location speichern mit Bild + Kontakt
 document.getElementById("location-form").addEventListener("submit", async (e) => {
   e.preventDefault();
   const name = document.getElementById("loc-name").value;
   const address = document.getElementById("loc-address").value;
   const hours = document.getElementById("loc-hours").value;
   const description = document.getElementById("loc-description").value;
+  const contact = document.getElementById("loc-contact").value;
+  const imageFile = document.getElementById("loc-image").files[0];
   const coords = marker.getLatLng();
   const user = supabase.auth.user();
+
+  let imageUrl = null;
+
+  if (imageFile) {
+    const path = `${user.id}/${Date.now()}_${imageFile.name}`;
+    const { error: uploadError } = await supabase.storage
+      .from("location-images")
+      .upload(path, imageFile, { upsert: true });
+
+    if (uploadError) {
+      document.getElementById("loc-status").textContent = "Fehler beim Hochladen: " + uploadError.message;
+      return;
+    }
+
+    imageUrl = supabase.storage.from("location-images").getPublicUrl(path).publicURL;
+  }
 
   const { error } = await supabase.from("Locations").insert([{
     name,
     address,
     hours,
     description,
+    contact,
+    image_url: imageUrl,
     latitude: coords.lat,
     longitude: coords.lng,
     user_id: user.id
@@ -210,9 +264,15 @@ document.getElementById("location-form").addEventListener("submit", async (e) =>
 
   if (!error) {
     const m = L.marker([coords.lat, coords.lng]).addTo(map);
-    m.bindPopup(`<strong>${name}</strong><br>${description}<br><em>${hours}</em><br>${address}`);
+    m.bindPopup(`
+      <strong>${name}</strong><br>${description}<br><em>${hours}</em><br>${address}<br>${contact}<br>
+      ${imageUrl ? `<img src="${imageUrl}" style="max-width:100px;">` : ""}
+    `);
     supabaseMarkers.push(m);
     document.getElementById("loc-status").textContent = "Gespeichert!";
+    if (imageUrl) {
+      document.getElementById("location-image-preview").innerHTML = `<img src="${imageUrl}" alt="Vorschau">`;
+    }
     toggleLocationModal();
   } else {
     document.getElementById("loc-status").textContent = "Fehler: " + error.message;
