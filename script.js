@@ -39,7 +39,9 @@ function drawCircle(lat, lon) {
 
   circle = L.circle(center, {
     radius: radiusKm * 1000,
-    color: "green", fillColor: "#aaffaa", fillOpacity: 0.3,
+    color: "green",
+    fillColor: "#aaffaa",
+    fillOpacity: 0.3,
   }).addTo(map);
 
   loadLocationsWithRadius(center.lat, center.lng, radiusKm);
@@ -47,14 +49,16 @@ function drawCircle(lat, lon) {
 
 async function loadLocationsWithRadius(lat, lon, radiusKm) {
   document.getElementById("loader").style.display = "block";
-  const { data, error } = await supabase.rpc('get_locations_within_radius', {
-    lat_input: lat, lon_input: lon, radius_km: radiusKm,
+  const { data, error } = await supabase.rpc("get_locations_within_radius", {
+    lat_input: lat,
+    lon_input: lon,
+    radius_km: radiusKm,
   });
   if (error) return alert("Fehler: " + error.message);
 
-  supabaseMarkers.forEach(m => map.removeLayer(m));
+  supabaseMarkers.forEach((m) => map.removeLayer(m));
   supabaseMarkers = [];
-  data.forEach(loc => {
+  data.forEach((loc) => {
     const m = L.marker([loc.latitude, loc.longitude]).addTo(map);
     m.bindPopup(`<strong>${loc.name || "Unbenannt"}</strong><br>${loc.description || ""}`);
     supabaseMarkers.push(m);
@@ -105,7 +109,22 @@ document.getElementById("location-form").addEventListener("submit", async (e) =>
   e.preventDefault();
   const name = document.getElementById("loc-name").value;
   const address = document.getElementById("loc-address").value;
-  const { error } = await supabase.from("Locations").insert([{ Name: name, Adress: address }]);
+  const coords = marker.getLatLng();
+
+  const { data: { user }, error: userError } = await supabase.auth.getUser();
+  if (userError || !user) {
+    document.getElementById("loc-status").textContent = "Fehler: Benutzer nicht angemeldet.";
+    return;
+  }
+
+  const { error } = await supabase.from("Locations").insert([{
+    name: name,
+    address: address,
+    latitude: coords.lat,
+    longitude: coords.lng,
+    user_id: user.id
+  }]);
+
   document.getElementById("loc-status").textContent = error ? error.message : "Gespeichert!";
 });
 
@@ -116,7 +135,7 @@ document.getElementById("profile-form").addEventListener("submit", async (e) => 
   const { data: { user } } = await supabase.auth.getUser();
 
   const { error } = await supabase
-    .from("Profiles")
+    .from("profiles")
     .upsert([{ user_id: user.id, name: name, address: address }]);
   document.getElementById("profile-status").textContent = error ? error.message : "Profil gespeichert!";
 });
