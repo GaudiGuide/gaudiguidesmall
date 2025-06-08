@@ -101,7 +101,7 @@ document.getElementById("location-form").addEventListener("submit", async (e) =>
   const user = supabase.auth.user();
   console.log("👤 Aktueller User:", user);
 
-  const session = await supabase.auth.getSession();
+  const session = supabase.auth.session();
   console.log("🧾 Session Info:", session);
 
   if (!user) {
