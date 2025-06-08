@@ -154,15 +154,18 @@ document.getElementById("auth-form").addEventListener("submit", async (e) => {
 
 document.getElementById("profile-form").addEventListener("submit", async (e) => {
   e.preventDefault();
+  const user = supabase.auth.user();
+  if (!user) {
+    document.getElementById("profile-status").textContent = "Bitte einloggen.";
+    return;
+  }
+
   const name = document.getElementById("profile-name").value;
   const file = document.getElementById("profile-image").files[0];
-  const user = supabase.auth.user();
-
   let imageUrl = null;
 
   if (file) {
     const path = `${user.id}/${Date.now()}_${file.name}`;
-    console.log("Upload to avatars:", path);
     const { error: uploadError } = await supabase.storage
       .from("avatars")
       .upload(path, file, { upsert: true });
@@ -210,6 +213,12 @@ async function loadProfileData() {
 
 document.getElementById("location-form").addEventListener("submit", async (e) => {
   e.preventDefault();
+  const user = supabase.auth.user();
+  if (!user) {
+    document.getElementById("loc-status").textContent = "Bitte einloggen.";
+    return;
+  }
+
   const name = document.getElementById("loc-name").value;
   const address = document.getElementById("loc-address").value;
   const hours = document.getElementById("loc-hours").value;
@@ -217,13 +226,10 @@ document.getElementById("location-form").addEventListener("submit", async (e) =>
   const contact = document.getElementById("loc-contact").value;
   const imageFile = document.getElementById("loc-image").files[0];
   const coords = marker.getLatLng();
-  const user = supabase.auth.user();
-
   let imageUrl = null;
 
   if (imageFile) {
     const path = `${user.id}/${Date.now()}_${imageFile.name}`;
-    console.log("Upload to location-images:", path);
     const { error: uploadError } = await supabase.storage
       .from("location-images")
       .upload(path, imageFile, { upsert: true });
