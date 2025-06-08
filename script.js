@@ -16,7 +16,12 @@ function initMap(position) {
   marker = L.marker([userLat, userLon]).addTo(map);
 
   try {
-    const provider = new window.GeoSearch.OpenStreetMapProvider();
+    const provider = new window.GeoSearch.OpenStreetMapProvider({
+  params: {
+    'accept-language': 'de',
+    countrycodes: 'de',
+  }
+});
     const searchControl = new window.GeoSearch.GeoSearchControl({
       provider,
       showMarker: true,
