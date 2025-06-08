@@ -172,7 +172,7 @@ document.getElementById("auth-form").addEventListener("submit", async (e) => {
   }
 });
 
-// Profil speichern mit Bild
+// 🔄 Profil speichern mit Bild
 document.getElementById("profile-form").addEventListener("submit", async (e) => {
   e.preventDefault();
   const name = document.getElementById("profile-name").value;
@@ -209,7 +209,7 @@ document.getElementById("profile-form").addEventListener("submit", async (e) => 
   }
 });
 
-// Profil laden
+// 🔄 Profil laden
 async function loadProfileData() {
   const user = supabase.auth.user();
   if (!user) return;
@@ -222,7 +222,7 @@ async function loadProfileData() {
   }
 }
 
-// Location speichern mit Bild + Kontakt
+// 📌 Location speichern mit Bild & Kontakt
 document.getElementById("location-form").addEventListener("submit", async (e) => {
   e.preventDefault();
   const name = document.getElementById("loc-name").value;
