@@ -15,20 +15,27 @@ function initMap(position) {
   L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png").addTo(map);
   marker = L.marker([userLat, userLon]).addTo(map);
 
-  const provider = new window.GeoSearch.OpenStreetMapProvider({
-    params: { 'accept-language': 'de', countrycodes: 'de' }
-  });
+  if (window.GeoSearch && window.GeoSearch.OpenStreetMapProvider && window.GeoSearch.GeoSearchControl) {
+    const provider = new window.GeoSearch.OpenStreetMapProvider({
+      params: { 'accept-language': 'de', countrycodes: 'de' }
+    });
 
-  const searchControl = new window.GeoSearch.GeoSearchControl({
-    provider, style: "bar", searchLabel: "Adresse eingeben…",
-    autoComplete: true, autoCompleteDelay: 300
-  });
+    const searchControl = new window.GeoSearch.GeoSearchControl({
+      provider,
+      style: "bar",
+      searchLabel: "Adresse eingeben…",
+      autoComplete: true,
+      autoCompleteDelay: 300
+    });
 
-  map.addControl(searchControl);
+    map.addControl(searchControl);
 
-  map.on("geosearch/showlocation", (result) => {
-    drawCircle(result.location.y, result.location.x);
-  });
+    map.on("geosearch/showlocation", (result) => {
+      drawCircle(result.location.y, result.location.x);
+    });
+  } else {
+    console.warn("GeoSearch nicht geladen oder fehlerhaft – wird übersprungen.");
+  }
 
   document.getElementById("radius-toggle").onclick = () => {
     showCircle = !showCircle;
@@ -164,11 +171,14 @@ document.getElementById("profile-form").addEventListener("submit", async (e) => 
   const file = document.getElementById("profile-image").files[0];
   let imageUrl = null;
 
-  if (file) {
+  if (file && file.size > 0) {
     const path = `${user.id}/${Date.now()}_${file.name}`;
     const { error: uploadError } = await supabase.storage
       .from("avatars")
-      .upload(path, file, { upsert: true });
+      .upload(path, file, {
+        upsert: true,
+        contentType: file.type || "image/png"
+      });
 
     if (uploadError) {
       document.getElementById("profile-status").textContent = "Fehler beim Hochladen: " + uploadError.message;
@@ -228,11 +238,14 @@ document.getElementById("location-form").addEventListener("submit", async (e) =>
   const coords = marker.getLatLng();
   let imageUrl = null;
 
-  if (imageFile) {
+  if (imageFile && imageFile.size > 0) {
     const path = `${user.id}/${Date.now()}_${imageFile.name}`;
     const { error: uploadError } = await supabase.storage
       .from("location-images")
-      .upload(path, imageFile, { upsert: true });
+      .upload(path, imageFile, {
+        upsert: true,
+        contentType: imageFile.type || "image/jpeg"
+      });
 
     if (uploadError) {
       document.getElementById("loc-status").textContent = "Fehler beim Hochladen: " + uploadError.message;
