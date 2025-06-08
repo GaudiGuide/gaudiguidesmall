@@ -15,22 +15,23 @@ function initMap(position) {
   L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png").addTo(map);
   marker = L.marker([userLat, userLon]).addTo(map);
 
-  // ✅ Sicherstellen, dass GeoSearch geladen ist
+  // ✅ GeoSearch sicher initialisieren
   if (
-    typeof window.GeoSearch === "undefined" ||
-    typeof window.GeoSearch.OpenStreetMapProvider !== "function" ||
-    typeof window.GeoSearch.GeoSearchControl !== "function"
+    !window.GeoSearch ||
+    typeof window.GeoSearch.OpenStreetMapProvider !== 'function' ||
+    typeof window.GeoSearch.GeoSearchControl !== 'function'
   ) {
-    console.error("GeoSearch wurde nicht korrekt geladen.");
-    alert("GeoSearch konnte nicht geladen werden. Bitte Seite neu laden.");
+    console.error("❌ GeoSearch nicht korrekt geladen.");
+    alert("Die Suchfunktion konnte nicht geladen werden. Bitte Seite neu laden.");
     return;
   }
 
   const provider = new window.GeoSearch.OpenStreetMapProvider();
   const searchControl = new window.GeoSearch.GeoSearchControl({
-    provider: provider,
+    provider,
     style: 'bar',
   });
+
   map.addControl(searchControl);
 
   map.on("geosearch/showlocation", function (result) {
@@ -71,6 +72,7 @@ async function loadLocationsWithRadius(lat, lon, radiusKm) {
 
   if (error) {
     alert("Fehler beim Laden der Locations: " + error.message);
+    document.getElementById("loader").style.display = "none";
     return;
   }
 
