@@ -10,74 +10,36 @@ let supabaseMarkers = [];
 function initMap(position) {
   userLat = position.coords.latitude;
   userLon = position.coords.longitude;
-
   map = L.map("map").setView([userLat, userLon], 13);
   L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png").addTo(map);
   marker = L.marker([userLat, userLon]).addTo(map);
-
-  if (window.GeoSearch && window.GeoSearch.OpenStreetMapProvider && window.GeoSearch.GeoSearchControl) {
-    const provider = new window.GeoSearch.OpenStreetMapProvider({
-      params: { 'accept-language': 'de', countrycodes: 'de' }
-    });
-
-    const searchControl = new window.GeoSearch.GeoSearchControl({
-      provider,
-      style: "bar",
-      searchLabel: "Adresse eingeben…",
-      autoComplete: true,
-      autoCompleteDelay: 300
-    });
-
-    map.addControl(searchControl);
-
-    map.on("geosearch/showlocation", (result) => {
-      drawCircle(result.location.y, result.location.x);
-    });
-  } else {
-    console.warn("GeoSearch nicht geladen oder fehlerhaft – wird übersprungen.");
-  }
-
-  document.getElementById("radius-toggle").onclick = () => {
-    showCircle = !showCircle;
-    drawCircle();
-  };
-
   drawCircle();
+
+  const provider = new window.GeoSearch.OpenStreetMapProvider({ params: { 'accept-language': 'de', countrycodes: 'de' }});
+  const searchControl = new window.GeoSearch.GeoSearchControl({ provider, style: "bar", searchLabel: "Adresse eingeben…", autoComplete: true, autoCompleteDelay: 300 });
+  map.addControl(searchControl);
+  map.on("geosearch/showlocation", (result) => drawCircle(result.location.y, result.location.x));
+
+  document.getElementById("radius-toggle").onclick = () => { showCircle = !showCircle; drawCircle(); };
 }
 
 function drawCircle(lat, lon) {
   if (!map) return;
-
   const radiusKm = 5;
   const center = lat && lon ? L.latLng(lat, lon) : marker.getLatLng();
-
   if (lat && lon && marker) map.removeLayer(marker);
   if (lat && lon) marker = L.marker(center).addTo(map);
-
   if (circle) map.removeLayer(circle);
-
-  if (showCircle) {
-    circle = L.circle(center, {
-      radius: radiusKm * 1000,
-      color: "green", fillColor: "#aaffaa", fillOpacity: 0.3
-    }).addTo(map);
-  }
-
+  if (showCircle) circle = L.circle(center, { radius: radiusKm * 1000, color: "green", fillColor: "#aaffaa", fillOpacity: 0.3 }).addTo(map);
   loadLocationsWithRadius(center.lat, center.lng, radiusKm);
 }
 
 async function loadLocationsWithRadius(lat, lon, radiusKm) {
   document.getElementById("loader").style.display = "block";
-  const { data, error } = await supabase.rpc("get_locations_within_radius", {
-    lat_input: lat, lon_input: lon, radius_km: radiusKm,
-  });
+  const { data, error } = await supabase.rpc("get_locations_within_radius", { lat_input: lat, lon_input: lon, radius_km: radiusKm });
+  if (error) return alert("Fehler beim Laden der Locations: " + error.message);
 
-  if (error) {
-    alert("Fehler beim Laden der Locations: " + error.message);
-    return;
-  }
-
-  const user = supabase.auth.user();
+  const { data: { user } } = await supabase.auth.getUser();
   supabaseMarkers.forEach((m) => map.removeLayer(m));
   supabaseMarkers = [];
 
@@ -85,72 +47,39 @@ async function loadLocationsWithRadius(lat, lon, radiusKm) {
     const m = L.marker([loc.latitude, loc.longitude]).addTo(map);
     const isOwner = user && loc.user_id === user.id;
     m.bindPopup(`
-      <strong>${loc.name}</strong><br>
-      ${loc.description || ""}<br>
-      <em>${loc.hours || ""}</em><br>
-      ${loc.address || ""}<br>
-      ${loc.contact || ""}<br>
-      ${loc.image_url ? `<img src="${loc.image_url}" style="max-width:100px;">` : ""}
+      <strong>${loc.name}</strong><br>${loc.description || ""}<br>
+      <em>${loc.hours || ""}</em><br>${loc.address || ""}<br>
+      ${loc.contact || ""}<br>${loc.image_url ? `<img src="${loc.image_url}" style="max-width:100px;">` : ""}
       ${isOwner ? "<br><em>(Eigene Location)</em>" : ""}
     `);
     supabaseMarkers.push(m);
   });
-
   document.getElementById("loader").style.display = "none";
 }
 
 async function updateAuthUI() {
-  const user = supabase.auth.user();
+  const { data: { user } } = await supabase.auth.getUser();
   const loggedIn = !!user;
-  const email = user?.email;
-
-  document.getElementById("user-display").textContent = loggedIn ? `👤 ${email}` : "";
+  document.getElementById("user-display").textContent = loggedIn ? `👤 ${user.email}` : "";
   ["login-btn", "register-btn"].forEach(id => document.getElementById(id).style.display = loggedIn ? "none" : "inline");
   ["logout-btn", "profile-btn", "location-btn"].forEach(id => document.getElementById(id).style.display = loggedIn ? "inline" : "none");
 }
 
+// Auth Form
 let authMode = "login";
-
-function toggleAuthModal() {
-  document.getElementById("auth-modal").classList.toggle("hidden");
-  document.getElementById("auth-status").textContent = "";
-}
-
-function switchAuthMode() {
-  authMode = authMode === "login" ? "register" : "login";
-  document.getElementById("auth-title").textContent = authMode === "login" ? "Login" : "Registrieren";
-  document.getElementById("auth-submit-btn").textContent = authMode === "login" ? "Anmelden" : "Registrieren";
-  document.getElementById("toggle-auth-mode").innerHTML =
-    authMode === "login"
-      ? 'Noch kein Konto? <a href="#" onclick="switchAuthMode()">Registrieren</a>'
-      : 'Bereits registriert? <a href="#" onclick="switchAuthMode()">Login</a>';
-}
-
-function toggleProfileModal() {
-  document.getElementById("profile-modal").classList.toggle("hidden");
-  loadProfileData();
-}
-
-function toggleLocationModal() {
-  document.getElementById("location-modal").classList.toggle("hidden");
-}
-
 document.getElementById("auth-form").addEventListener("submit", async (e) => {
   e.preventDefault();
   const email = document.getElementById("auth-email").value;
   const password = document.getElementById("auth-password").value;
   const statusEl = document.getElementById("auth-status");
-
   try {
-    let userData, error;
+    let response;
     if (authMode === "login") {
-      ({ user: userData, error } = await supabase.auth.signIn({ email, password }));
+      response = await supabase.auth.signIn({ email, password });
     } else {
-      ({ user: userData, error } = await supabase.auth.signUp({ email, password }));
+      response = await supabase.auth.signUp({ email, password });
     }
-
-    if (error) throw error;
-
+    if (response.error) throw response.error;
     if (authMode === "register") alert("Registrierung erfolgreich. Bitte E-Mail bestätigen.");
     toggleAuthModal();
     updateAuthUI();
@@ -159,75 +88,11 @@ document.getElementById("auth-form").addEventListener("submit", async (e) => {
   }
 });
 
-document.getElementById("profile-form").addEventListener("submit", async (e) => {
-  e.preventDefault();
-  const user = supabase.auth.user();
-  if (!user) {
-    document.getElementById("profile-status").textContent = "Bitte einloggen.";
-    return;
-  }
-
-  const name = document.getElementById("profile-name").value;
-  const file = document.getElementById("profile-image").files[0];
-  let imageUrl = null;
-
-  if (file && file.size > 0) {
-    const path = `${user.id}/${Date.now()}_${file.name}`;
-    const { error: uploadError } = await supabase.storage
-      .from("avatars")
-      .upload(path, file, {
-        upsert: true,
-        contentType: file.type || "image/png"
-      });
-
-    if (uploadError) {
-      document.getElementById("profile-status").textContent = "Fehler beim Hochladen: " + uploadError.message;
-      return;
-    }
-
-    imageUrl = supabase.storage.from("avatars").getPublicUrl(path).publicURL;
-  }
-
-  const { error } = await supabase
-    .from("profiles")
-    .upsert([{ user_id: user.id, name, avatar_url: imageUrl }]);
-
-  if (!error) {
-    document.getElementById("profile-status").textContent = "Profil gespeichert!";
-    if (imageUrl) {
-      document.getElementById("profile-image-preview").innerHTML = `<img src="${imageUrl}" alt="Profilbild">`;
-    }
-  } else {
-    document.getElementById("profile-status").textContent = "Fehler: " + error.message;
-  }
-});
-
-async function loadProfileData() {
-  const user = supabase.auth.user();
-  if (!user) return;
-
-  const { data, error } = await supabase
-    .from("profiles")
-    .select("*")
-    .eq("user_id", user.id)
-    .limit(1);
-
-  if (!error && data.length > 0) {
-    const profile = data[0];
-    document.getElementById("profile-name").value = profile.name || "";
-    if (profile.avatar_url) {
-      document.getElementById("profile-image-preview").innerHTML = `<img src="${profile.avatar_url}" alt="Profilbild">`;
-    }
-  }
-}
-
+// Location speichern
 document.getElementById("location-form").addEventListener("submit", async (e) => {
   e.preventDefault();
-  const user = supabase.auth.user();
-  if (!user) {
-    document.getElementById("loc-status").textContent = "Bitte einloggen.";
-    return;
-  }
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return document.getElementById("loc-status").textContent = "Bitte einloggen.";
 
   const name = document.getElementById("loc-name").value;
   const address = document.getElementById("loc-address").value;
@@ -242,16 +107,8 @@ document.getElementById("location-form").addEventListener("submit", async (e) =>
     const path = `${user.id}/${Date.now()}_${imageFile.name}`;
     const { error: uploadError } = await supabase.storage
       .from("location-images")
-      .upload(path, imageFile, {
-        upsert: true,
-        contentType: imageFile.type || "image/jpeg"
-      });
-
-    if (uploadError) {
-      document.getElementById("loc-status").textContent = "Fehler beim Hochladen: " + uploadError.message;
-      return;
-    }
-
+      .upload(path, imageFile, { upsert: true, contentType: imageFile.type || "image/jpeg" });
+    if (uploadError) return document.getElementById("loc-status").textContent = "Fehler beim Hochladen: " + uploadError.message;
     imageUrl = supabase.storage.from("location-images").getPublicUrl(path).publicURL;
   }
 
@@ -265,10 +122,7 @@ document.getElementById("location-form").addEventListener("submit", async (e) =>
 
   if (!error) {
     const m = L.marker([coords.lat, coords.lng]).addTo(map);
-    m.bindPopup(`
-      <strong>${name}</strong><br>${description}<br><em>${hours}</em><br>${address}<br>${contact}<br>
-      ${imageUrl ? `<img src="${imageUrl}" style="max-width:100px;">` : ""}
-    `);
+    m.bindPopup(`<strong>${name}</strong><br>${description}<br><em>${hours}</em><br>${address}<br>${contact}<br>${imageUrl ? `<img src="${imageUrl}" style="max-width:100px;">` : ""}`);
     supabaseMarkers.push(m);
     document.getElementById("loc-status").textContent = "Gespeichert!";
     toggleLocationModal();
@@ -277,22 +131,30 @@ document.getElementById("location-form").addEventListener("submit", async (e) =>
   }
 });
 
+// UI Events
 document.getElementById("login-btn").onclick = toggleAuthModal;
-document.getElementById("register-btn").onclick = () => {
-  authMode = "register";
-  switchAuthMode();
-  toggleAuthModal();
-};
-document.getElementById("logout-btn").onclick = async () => {
-  await supabase.auth.signOut();
-  updateAuthUI();
-};
+document.getElementById("register-btn").onclick = () => { authMode = "register"; switchAuthMode(); toggleAuthModal(); };
+document.getElementById("logout-btn").onclick = async () => { await supabase.auth.signOut(); updateAuthUI(); };
 document.getElementById("profile-btn").onclick = toggleProfileModal;
 document.getElementById("location-btn").onclick = toggleLocationModal;
 
+// Modals
+function toggleAuthModal() {
+  document.getElementById("auth-modal").classList.toggle("hidden");
+  document.getElementById("auth-status").textContent = "";
+}
+function switchAuthMode() {
+  authMode = authMode === "login" ? "register" : "login";
+  document.getElementById("auth-title").textContent = authMode === "login" ? "Login" : "Registrieren";
+  document.getElementById("auth-submit-btn").textContent = authMode === "login" ? "Anmelden" : "Registrieren";
+  document.getElementById("toggle-auth-mode").innerHTML = authMode === "login"
+    ? 'Noch kein Konto? <a href="#" onclick="switchAuthMode()">Registrieren</a>'
+    : 'Bereits registriert? <a href="#" onclick="switchAuthMode()">Login</a>';
+}
+function toggleProfileModal() { document.getElementById("profile-modal").classList.toggle("hidden"); loadProfileData(); }
+function toggleLocationModal() { document.getElementById("location-modal").classList.toggle("hidden"); }
+
 window.onload = () => {
-  navigator.geolocation.getCurrentPosition(initMap, () =>
-    initMap({ coords: { latitude: userLat, longitude: userLon } })
-  );
+  navigator.geolocation.getCurrentPosition(initMap, () => initMap({ coords: { latitude: userLat, longitude: userLon } }));
   updateAuthUI();
 };
