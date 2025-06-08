@@ -15,8 +15,8 @@ function initMap(position) {
   L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png").addTo(map);
   marker = L.marker([userLat, userLon]).addTo(map);
 
-  const provider = new GeoSearch.OpenStreetMapProvider();
-  const searchControl = new window.GeoSearch.GeoSearchControl({ provider });
+  const provider = new OpenStreetMapProvider();
+  const searchControl = new GeoSearchControl({ provider });
   map.addControl(searchControl);
 
   map.on("geosearch/showlocation", function (result) {
@@ -39,9 +39,7 @@ function drawCircle(lat, lon) {
 
   circle = L.circle(center, {
     radius: radiusKm * 1000,
-    color: "green",
-    fillColor: "#aaffaa",
-    fillOpacity: 0.3,
+    color: "green", fillColor: "#aaffaa", fillOpacity: 0.3,
   }).addTo(map);
 
   loadLocationsWithRadius(center.lat, center.lng, radiusKm);
@@ -54,15 +52,18 @@ async function loadLocationsWithRadius(lat, lon, radiusKm) {
     lon_input: lon,
     radius_km: radiusKm,
   });
+
   if (error) return alert("Fehler: " + error.message);
 
   supabaseMarkers.forEach((m) => map.removeLayer(m));
   supabaseMarkers = [];
+
   data.forEach((loc) => {
     const m = L.marker([loc.latitude, loc.longitude]).addTo(map);
     m.bindPopup(`<strong>${loc.name || "Unbenannt"}</strong><br>${loc.description || ""}`);
     supabaseMarkers.push(m);
   });
+
   document.getElementById("loader").style.display = "none";
 }
 
@@ -137,6 +138,7 @@ document.getElementById("profile-form").addEventListener("submit", async (e) => 
   const { error } = await supabase
     .from("profiles")
     .upsert([{ user_id: user.id, name: name, address: address }]);
+
   document.getElementById("profile-status").textContent = error ? error.message : "Profil gespeichert!";
 });
 
