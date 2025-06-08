@@ -31,7 +31,6 @@
   <div id="loader">Lade Locations...</div>
 
   <div class="container">
-    <!-- Umkreis -->
     <div class="form-section">
       <h3>Umkreis einstellen</h3>
       <label for="radius">Radius in km</label>
@@ -39,7 +38,6 @@
       <button onclick="drawCircle()">Umkreis zeichnen</button>
     </div>
 
-    <!-- Neue Location -->
     <div class="form-section" id="location-form-section" style="display:none;">
       <h3>Neue Location</h3>
       <form id="location-form">
@@ -52,7 +50,6 @@
       </form>
     </div>
 
-    <!-- Profil -->
     <div class="form-section" id="profile-section" style="display:none;">
       <h3>Profil</h3>
       <form id="profile-form">
@@ -68,14 +65,29 @@
     </div>
   </div>
 
-  <!-- Supabase -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <!-- Login/Registrieren Modal -->
+  <div id="auth-modal" class="modal hidden">
+    <div class="modal-content">
+      <span class="close-btn" onclick="toggleAuthModal()">&times;</span>
+      <h3 id="auth-title">Login</h3>
+      <form id="auth-form">
+        <label for="auth-email">E-Mail:</label>
+        <input type="email" id="auth-email" required />
+        <label for="auth-password">Passwort:</label>
+        <input type="password" id="auth-password" required />
+        <button type="submit" id="auth-submit-btn">Anmelden</button>
+        <div class="status" id="auth-status"></div>
+      </form>
+      <p id="toggle-auth-mode">
+        Noch kein Konto? <a href="#" onclick="switchAuthMode()">Registrieren</a>
+      </p>
+    </div>
+  </div>
 
-  <!-- Leaflet & GeoSearch -->
+  <!-- Scripts -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="https://unpkg.com/leaflet-geosearch@3.1.0/dist/bundle.min.js"></script>
-
-  <!-- Dein Script NACHDEM alles andere geladen wurde -->
   <script src="script.js"></script>
 </body>
 </html>
