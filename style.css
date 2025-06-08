@@ -1,0 +1,171 @@
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background-color: #f7f2e5;
+  color: #233b20;
+}
+
+/* Logo und Header */
+.logo-container {
+  text-align: center;
+  padding-top: 1em;
+}
+
+.logo-container img {
+  max-height: 80px;
+}
+
+header {
+  background-color: #233b20;
+  padding: 1em;
+  text-align: center;
+  font-size: 1.5em;
+  color: white;
+  position: relative;
+}
+
+/* Auth-Bereich oben rechts */
+header div {
+  position: absolute;
+  top: 1em;
+  right: 1em;
+}
+
+header button {
+  margin-left: 0.5em;
+  padding: 0.4em 0.8em;
+  background-color: #b28e61;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 0.9em;
+}
+
+header button:hover {
+  background-color: #8c6e4e;
+}
+
+#user-display {
+  font-weight: bold;
+  margin-right: 1em;
+  color: #fff7cc;
+}
+
+/* Karte */
+.map-wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+
+#map {
+  height: 500px;
+  width: 90%;
+  margin: 1em auto;
+  border: 2px solid #233b20;
+  border-radius: 8px;
+}
+
+/* Ladeanzeige */
+#loader {
+  text-align: center;
+  padding: 1em;
+  display: none;
+  font-weight: bold;
+}
+
+/* Formularbereiche */
+.container {
+  display: flex;
+  justify-content: space-around;
+  padding: 2em;
+  background-color: #f0f8f0;
+  flex-wrap: wrap;
+  gap: 2em;
+}
+
+.form-section {
+  width: 40%;
+  min-width: 280px;
+  background: #fff;
+  padding: 1.5em;
+  border-radius: 10px;
+  box-shadow: 0 0 5px rgba(0,0,0,0.1);
+}
+
+.form-section h3 {
+  margin-top: 0;
+}
+
+/* Formularelemente */
+label,
+input,
+button,
+textarea {
+  display: block;
+  width: 100%;
+  margin-bottom: 10px;
+  font-size: 1em;
+}
+
+input,
+textarea {
+  padding: 0.5em;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  font-family: inherit;
+}
+
+textarea {
+  resize: vertical;
+}
+
+button {
+  background-color: #233b20;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  padding: 0.6em;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+button:hover {
+  background-color: #586d42;
+}
+
+/* Statusnachrichten */
+.status {
+  text-align: center;
+  font-size: 0.95em;
+  margin-top: 1em;
+}
+
+.error {
+  color: red;
+}
+
+.success {
+  color: green;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .container {
+    flex-direction: column;
+    padding: 1em;
+  }
+
+  .form-section {
+    width: 90%;
+    margin: auto;
+  }
+
+  header div {
+    position: static;
+    text-align: center;
+    margin-top: 1em;
+  }
+}
