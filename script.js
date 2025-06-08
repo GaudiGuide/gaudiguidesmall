@@ -9,15 +9,38 @@ let radiusKm = 5;
 let showCircle = true;
 let supabaseMarkers = [];
 
+class CustomProvider extends window.GeoSearch.Provider {
+  constructor() {
+    super();
+    this.endpoint = '/api/geocode';
+  }
+
+  async search({ query }) {
+    const response = await fetch(`${this.endpoint}?q=${encodeURIComponent(query)}`);
+    const results = await response.json();
+
+    return results.map(result => ({
+      x: parseFloat(result.lon),
+      y: parseFloat(result.lat),
+      label: result.display_name,
+      bounds: [
+        [parseFloat(result.boundingbox[0]), parseFloat(result.boundingbox[2])],
+        [parseFloat(result.boundingbox[1]), parseFloat(result.boundingbox[3])]
+      ],
+      raw: result,
+    }));
+  }
+}
+
 function initMap(position) {
   userLat = position.coords.latitude;
   userLon = position.coords.longitude;
   map = L.map("map").setView([userLat, userLon], 13);
   L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png").addTo(map);
 
-  userMarker = L.marker([userLat, userLon]).addTo(map).bindPopup("\ud83d\udccd Du bist hier").openPopup();
+  userMarker = L.marker([userLat, userLon]).addTo(map).bindPopup("📍 Du bist hier").openPopup();
 
-  const provider = new window.GeoSearch.OpenStreetMapProvider({ params: { "accept-language": "de", countrycodes: "de" } });
+  const provider = new CustomProvider();
   const searchControl = new window.GeoSearch.GeoSearchControl({ provider, style: "bar", searchLabel: "Adresse eingeben…", autoComplete: true, autoCompleteDelay: 300 });
   map.addControl(searchControl);
 
