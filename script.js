@@ -91,7 +91,10 @@ document.getElementById("auth-form").addEventListener("submit", async (e) => {
 // Location speichern
 document.getElementById("location-form").addEventListener("submit", async (e) => {
   e.preventDefault();
-  const { data: { user } } = await supabase.auth.getUser();
+  console.log("🔍 DEBUG: Insert wird ausgelöst");
+  const { data: { user }, error: userError } = await supabase.auth.getUser();
+  console.log("👤 Aktueller User:", user);
+  if (userError) console.error("❌ Fehler beim Laden des Users:", userError);
   if (!user) return document.getElementById("loc-status").textContent = "Bitte einloggen.";
 
   const name = document.getElementById("loc-name").value;
@@ -112,13 +115,17 @@ document.getElementById("location-form").addEventListener("submit", async (e) =>
     imageUrl = supabase.storage.from("location-images").getPublicUrl(path).publicURL;
   }
 
-  const { error } = await supabase.from("Locations").insert([{
+  const insertData = {
     name, address, hours, description, contact,
     image_url: imageUrl,
     latitude: coords.lat,
     longitude: coords.lng,
     user_id: user.id
-  }]);
+  };
+
+  console.log("📦 Insert-Objekt:", insertData);
+
+  const { error } = await supabase.from("Locations").insert([insertData]);
 
   if (!error) {
     const m = L.marker([coords.lat, coords.lng]).addTo(map);
@@ -127,6 +134,7 @@ document.getElementById("location-form").addEventListener("submit", async (e) =>
     document.getElementById("loc-status").textContent = "Gespeichert!";
     toggleLocationModal();
   } else {
+    console.error("❌ Insert-Fehler:", error);
     document.getElementById("loc-status").textContent = "Fehler: " + error.message;
   }
 });
@@ -148,8 +156,8 @@ function switchAuthMode() {
   document.getElementById("auth-title").textContent = authMode === "login" ? "Login" : "Registrieren";
   document.getElementById("auth-submit-btn").textContent = authMode === "login" ? "Anmelden" : "Registrieren";
   document.getElementById("toggle-auth-mode").innerHTML = authMode === "login"
-    ? 'Noch kein Konto? <a href="#" onclick="switchAuthMode()">Registrieren</a>'
-    : 'Bereits registriert? <a href="#" onclick="switchAuthMode()">Login</a>';
+    ? 'Noch kein Konto? <a href=\"#\" onclick=\"switchAuthMode()\">Registrieren</a>'
+    : 'Bereits registriert? <a href=\"#\" onclick=\"switchAuthMode()\">Login</a>';
 }
 function toggleProfileModal() { document.getElementById("profile-modal").classList.toggle("hidden"); loadProfileData(); }
 function toggleLocationModal() { document.getElementById("location-modal").classList.toggle("hidden"); }
