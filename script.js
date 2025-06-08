@@ -15,36 +15,20 @@ function initMap(position) {
   L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png").addTo(map);
   marker = L.marker([userLat, userLon]).addTo(map);
 
-  try {
-    if (!window.GeoSearch || !window.GeoSearch.OpenStreetMapProvider) {
-      throw new Error("GeoSearch nicht verfügbar.");
-    }
+  const provider = new window.GeoSearch.OpenStreetMapProvider({
+    params: { 'accept-language': 'de', countrycodes: 'de' }
+  });
 
-    const provider = new window.GeoSearch.OpenStreetMapProvider({
-      params: {
-        'accept-language': 'de',
-        countrycodes: 'de'
-      }
-    });
+  const searchControl = new window.GeoSearch.GeoSearchControl({
+    provider, style: "bar", searchLabel: "Adresse eingeben…",
+    autoComplete: true, autoCompleteDelay: 300
+  });
 
-    const searchControl = new window.GeoSearch.GeoSearchControl({
-      provider: provider,
-      style: "bar",
-      searchLabel: "Adresse eingeben…",
-      autoComplete: true,
-      autoCompleteDelay: 300
-    });
+  map.addControl(searchControl);
 
-    map.addControl(searchControl);
-
-    map.on("geosearch/showlocation", (result) => {
-      drawCircle(result.location.y, result.location.x);
-    });
-
-  } catch (err) {
-    console.error("GeoSearch Fehler:", err.message);
-    alert("Geo-Suche konnte nicht geladen werden.");
-  }
+  map.on("geosearch/showlocation", (result) => {
+    drawCircle(result.location.y, result.location.x);
+  });
 
   document.getElementById("radius-toggle").onclick = () => {
     showCircle = !showCircle;
@@ -58,7 +42,7 @@ function drawCircle(lat, lon) {
   if (!map) return;
 
   const radiusKm = 5;
-  let center = lat && lon ? L.latLng(lat, lon) : marker.getLatLng();
+  const center = lat && lon ? L.latLng(lat, lon) : marker.getLatLng();
 
   if (lat && lon && marker) map.removeLayer(marker);
   if (lat && lon) marker = L.marker(center).addTo(map);
@@ -68,9 +52,7 @@ function drawCircle(lat, lon) {
   if (showCircle) {
     circle = L.circle(center, {
       radius: radiusKm * 1000,
-      color: "green",
-      fillColor: "#aaffaa",
-      fillOpacity: 0.3,
+      color: "green", fillColor: "#aaffaa", fillOpacity: 0.3
     }).addTo(map);
   }
 
@@ -80,9 +62,7 @@ function drawCircle(lat, lon) {
 async function loadLocationsWithRadius(lat, lon, radiusKm) {
   document.getElementById("loader").style.display = "block";
   const { data, error } = await supabase.rpc("get_locations_within_radius", {
-    lat_input: lat,
-    lon_input: lon,
-    radius_km: radiusKm,
+    lat_input: lat, lon_input: lon, radius_km: radiusKm,
   });
 
   if (error) {
@@ -172,7 +152,6 @@ document.getElementById("auth-form").addEventListener("submit", async (e) => {
   }
 });
 
-// 🔄 Profil speichern mit Bild
 document.getElementById("profile-form").addEventListener("submit", async (e) => {
   e.preventDefault();
   const name = document.getElementById("profile-name").value;
@@ -183,6 +162,7 @@ document.getElementById("profile-form").addEventListener("submit", async (e) => 
 
   if (file) {
     const path = `${user.id}/${Date.now()}_${file.name}`;
+    console.log("Upload to avatars:", path);
     const { error: uploadError } = await supabase.storage
       .from("avatars")
       .upload(path, file, { upsert: true });
@@ -209,20 +189,25 @@ document.getElementById("profile-form").addEventListener("submit", async (e) => 
   }
 });
 
-// 🔄 Profil laden
 async function loadProfileData() {
   const user = supabase.auth.user();
   if (!user) return;
-  const { data, error } = await supabase.from("profiles").select("*").eq("user_id", user.id).single();
-  if (!error && data) {
-    document.getElementById("profile-name").value = data.name || "";
-    if (data.avatar_url) {
-      document.getElementById("profile-image-preview").innerHTML = `<img src="${data.avatar_url}" alt="Profilbild">`;
+
+  const { data, error } = await supabase
+    .from("profiles")
+    .select("*")
+    .eq("user_id", user.id)
+    .limit(1);
+
+  if (!error && data.length > 0) {
+    const profile = data[0];
+    document.getElementById("profile-name").value = profile.name || "";
+    if (profile.avatar_url) {
+      document.getElementById("profile-image-preview").innerHTML = `<img src="${profile.avatar_url}" alt="Profilbild">`;
     }
   }
 }
 
-// 📌 Location speichern mit Bild & Kontakt
 document.getElementById("location-form").addEventListener("submit", async (e) => {
   e.preventDefault();
   const name = document.getElementById("loc-name").value;
@@ -238,6 +223,7 @@ document.getElementById("location-form").addEventListener("submit", async (e) =>
 
   if (imageFile) {
     const path = `${user.id}/${Date.now()}_${imageFile.name}`;
+    console.log("Upload to location-images:", path);
     const { error: uploadError } = await supabase.storage
       .from("location-images")
       .upload(path, imageFile, { upsert: true });
@@ -251,11 +237,7 @@ document.getElementById("location-form").addEventListener("submit", async (e) =>
   }
 
   const { error } = await supabase.from("Locations").insert([{
-    name,
-    address,
-    hours,
-    description,
-    contact,
+    name, address, hours, description, contact,
     image_url: imageUrl,
     latitude: coords.lat,
     longitude: coords.lng,
@@ -270,9 +252,6 @@ document.getElementById("location-form").addEventListener("submit", async (e) =>
     `);
     supabaseMarkers.push(m);
     document.getElementById("loc-status").textContent = "Gespeichert!";
-    if (imageUrl) {
-      document.getElementById("location-image-preview").innerHTML = `<img src="${imageUrl}" alt="Vorschau">`;
-    }
     toggleLocationModal();
   } else {
     document.getElementById("loc-status").textContent = "Fehler: " + error.message;
@@ -293,6 +272,8 @@ document.getElementById("profile-btn").onclick = toggleProfileModal;
 document.getElementById("location-btn").onclick = toggleLocationModal;
 
 window.onload = () => {
-  navigator.geolocation.getCurrentPosition(initMap, () => initMap({ coords: { latitude: userLat, longitude: userLon } }));
+  navigator.geolocation.getCurrentPosition(initMap, () =>
+    initMap({ coords: { latitude: userLat, longitude: userLon } })
+  );
   updateAuthUI();
 };
