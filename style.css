@@ -5,35 +5,37 @@ body {
   color: #233b20;
 }
 
-/* Logo und Header */
-.logo-container {
+/* Header + Logo */
+header {
+  background-color: #233b20;
+  padding: 2em 1em 1.5em;
+  position: relative;
   text-align: center;
-  padding-top: 1em;
+  color: white;
+}
+
+.logo-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 80px;
 }
 
 .logo-container img {
-  max-height: 80px;
+  max-height: 100%;
+  max-width: 200px;
 }
 
-header {
-  background-color: #233b20;
-  padding: 1em;
-  text-align: center;
-  font-size: 1.5em;
-  color: white;
-  position: relative;
-}
-
-/* Auth-Bereich als Textlinks */
+/* Auth-Links oben rechts */
 .auth-links {
   position: absolute;
-  top: 1em;
-  right: 1em;
+  top: 0.8em;
+  right: 1.5em;
   font-size: 0.9em;
 }
 
 .auth-links a {
-  color: #fff7cc;
+  color: #b28e61;
   margin-left: 1em;
   text-decoration: none;
   font-weight: bold;
@@ -46,7 +48,7 @@ header {
 #user-display {
   font-weight: bold;
   margin-right: 0.5em;
-  color: #fff7cc;
+  color: #b28e61;
 }
 
 /* Karte */
