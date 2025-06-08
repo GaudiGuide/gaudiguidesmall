@@ -1,6 +1,6 @@
 const supabase = window.supabase.createClient(
   "https://lfptdjesepqdoolcxppw.supabase.co",
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxmcHRkamVzZXBxZG9vbGN4cHB3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQ4MDk3OTMsImV4cCI6MjA2MDM4NTc5M30.i67qj_tTDvx9_TJiWHCo_RT8EnS71ZV7LpJIvlAXiFg"
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZlZGNpZ2VkaGprYXJrY2JxdnRmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDcyMjI3NjUsImV4cCI6MjA2Mjc5ODc2NX0.Q7By1dg4FFZrA6UPWYVGHJinydzltjlpW3riruZTPXA"
 );
 
 let map, marker = null, circle = null;
@@ -19,22 +19,23 @@ function initMap(position) {
     const provider = new window.GeoSearch.OpenStreetMapProvider({
       params: {
         'accept-language': 'de',
-        countrycodes: 'de',
+        countrycodes: 'de'
       }
     });
 
     const searchControl = new window.GeoSearch.GeoSearchControl({
       provider,
+      searchLabel: "Adresse eingeben…",
       showMarker: true,
-      showPopup: false,
       retainZoomLevel: false,
-      animateZoom: true,
       autoClose: true,
-      searchLabel: "Adresse eingeben…"
+      autoComplete: true,
+      autoCompleteDelay: 300
     });
 
     map.addControl(searchControl);
-    map.on("geosearch/showlocation", function (result) {
+
+    map.on("geosearch/showlocation", (result) => {
       drawCircle(result.location.y, result.location.x);
     });
   } catch (err) {
@@ -92,21 +93,6 @@ async function loadLocationsWithRadius(lat, lon, radiusKm) {
   document.getElementById("loader").style.display = "none";
 }
 
-async function updateAuthUI() {
-  const { data: { session } } = await supabase.auth.getSession();
-  const loggedIn = !!session;
-  const email = session?.user?.email;
-
-  document.getElementById("user-display").textContent = loggedIn ? `👤 ${email}` : "";
-  document.getElementById("login-btn").style.display = loggedIn ? "none" : "inline";
-  document.getElementById("register-btn").style.display = loggedIn ? "none" : "inline";
-  document.getElementById("logout-btn").style.display = loggedIn ? "inline" : "none";
-  document.getElementById("profile-btn").style.display = loggedIn ? "inline" : "none";
-  document.getElementById("location-form-section").style.display = loggedIn ? "block" : "none";
-}
-
-let authMode = "login";
-
 function toggleAuthModal() {
   document.getElementById("auth-modal").classList.toggle("hidden");
   document.getElementById("auth-status").textContent = "";
@@ -123,22 +109,42 @@ function switchAuthMode() {
   document.getElementById("auth-status").textContent = "";
 }
 
+function toggleProfileModal() {
+  document.getElementById("profile-modal").classList.toggle("hidden");
+  loadProfileData();
+}
+
+function toggleLocationModal() {
+  document.getElementById("location-modal").classList.toggle("hidden");
+}
+
 document.getElementById("login-btn").onclick = toggleAuthModal;
 document.getElementById("register-btn").onclick = () => {
   authMode = "register";
   switchAuthMode();
   toggleAuthModal();
 };
-
 document.getElementById("logout-btn").onclick = async () => {
   await supabase.auth.signOut();
-  await updateAuthUI();
+  updateAuthUI();
 };
+document.getElementById("profile-btn").onclick = toggleProfileModal;
+document.getElementById("location-btn").onclick = toggleLocationModal;
 
-document.getElementById("profile-btn").onclick = () => {
-  const section = document.getElementById("profile-section");
-  section.style.display = section.style.display === "none" ? "block" : "none";
-};
+let authMode = "login";
+
+async function updateAuthUI() {
+  const { data: { session } } = await supabase.auth.getSession();
+  const loggedIn = !!session;
+  const email = session?.user?.email;
+
+  document.getElementById("user-display").textContent = loggedIn ? `👤 ${email}` : "";
+  document.getElementById("login-btn").style.display = loggedIn ? "none" : "inline";
+  document.getElementById("register-btn").style.display = loggedIn ? "none" : "inline";
+  document.getElementById("logout-btn").style.display = loggedIn ? "inline" : "none";
+  document.getElementById("profile-btn").style.display = loggedIn ? "inline" : "none";
+  document.getElementById("location-btn").style.display = loggedIn ? "inline" : "none";
+}
 
 document.getElementById("auth-form").addEventListener("submit", async (e) => {
   e.preventDefault();
@@ -164,6 +170,33 @@ document.getElementById("auth-form").addEventListener("submit", async (e) => {
   }
 });
 
+document.getElementById("profile-form").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const name = document.getElementById("profile-name").value;
+  const address = document.getElementById("profile-address").value;
+  const { data: { user } } = await supabase.auth.getUser();
+
+  const { error } = await supabase
+    .from("profiles")
+    .upsert([{ user_id: user.id, name: name, address: address }]);
+
+  document.getElementById("profile-status").textContent = error ? error.message : "Profil gespeichert!";
+});
+
+async function loadProfileData() {
+  const { data: { user } } = await supabase.auth.getUser();
+  const { data, error } = await supabase
+    .from("profiles")
+    .select("*")
+    .eq("user_id", user.id)
+    .single();
+
+  if (!error && data) {
+    document.getElementById("profile-name").value = data.name || "";
+    document.getElementById("profile-address").value = data.address || "";
+  }
+}
+
 document.getElementById("location-form").addEventListener("submit", async (e) => {
   e.preventDefault();
   const name = document.getElementById("loc-name").value;
@@ -185,19 +218,6 @@ document.getElementById("location-form").addEventListener("submit", async (e) =>
   }]);
 
   document.getElementById("loc-status").textContent = error ? error.message : "Gespeichert!";
-});
-
-document.getElementById("profile-form").addEventListener("submit", async (e) => {
-  e.preventDefault();
-  const name = document.getElementById("profile-name").value;
-  const address = document.getElementById("profile-address").value;
-  const { data: { user } } = await supabase.auth.getUser();
-
-  const { error } = await supabase
-    .from("profiles")
-    .upsert([{ user_id: user.id, name: name, address: address }]);
-
-  document.getElementById("profile-status").textContent = error ? error.message : "Profil gespeichert!";
 });
 
 window.onload = () => {
