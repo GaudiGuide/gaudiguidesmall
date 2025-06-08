@@ -1,6 +1,6 @@
 const supabase = window.supabase.createClient(
   "https://lfptdjesepqdoolcxppw.supabase.co",
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxmcHRkamVzZXBxZG9vbGN4cHB3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQ4MDk3OTMsImV4cCI6MjA2MDM4NTc5M30.i67qj_tTDvx9_TJiWHCo_RT8EnS71ZV7LpJIvlAXiFg"
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxmcHRkamVzZXBxZG9vbGN4cHB3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQ4MDk3OTMsImV4cCI6MjA2MDM4NTc5M30.i67qj_tTDvx9_TJiWHCo_RT8EnS71ZV7LpJIvlAXiFg."
 );
 
 let map, marker = null, circle = null, showCircle = true;
@@ -16,6 +16,10 @@ function initMap(position) {
   marker = L.marker([userLat, userLon]).addTo(map);
 
   if (window.GeoSearch && window.GeoSearch.OpenStreetMapProvider && window.GeoSearch.GeoSearchControl) {
+    console.log("GeoSearch:", window.GeoSearch);
+    console.log("OpenStreetMapProvider:", window.GeoSearch?.OpenStreetMapProvider);
+    console.log("GeoSearchControl:", window.GeoSearch?.GeoSearchControl);
+
     const provider = new window.GeoSearch.OpenStreetMapProvider({
       params: { 'accept-language': 'de', countrycodes: 'de' }
     });
@@ -28,7 +32,13 @@ function initMap(position) {
       autoCompleteDelay: 300
     });
 
-    map.addControl(searchControl);
+    console.log("searchControl:", searchControl);
+    
+    if (searchControl) {
+      map.addControl(searchControl);
+    } else {
+      console.error("searchControl is undefined. Check GeoSearch dependencies.");
+    }
 
     map.on("geosearch/showlocation", (result) => {
       drawCircle(result.location.y, result.location.x);
@@ -85,10 +95,8 @@ async function loadLocationsWithRadius(lat, lon, radiusKm) {
     const m = L.marker([loc.latitude, loc.longitude]).addTo(map);
     const isOwner = user && loc.user_id === user.id;
     m.bindPopup(`
-      <strong>${loc.name}</strong><br>
-      ${loc.description || ""}<br>
-      <em>${loc.hours || ""}</em><br>
-      ${loc.address || ""}<br>
+      <strong>${loc.name}</strong><br>${loc.description || ""}<br>
+      <em>${loc.hours || ""}</em><br>${loc.address || ""}<br>
       ${loc.contact || ""}<br>
       ${loc.image_url ? `<img src="${loc.image_url}" style="max-width:100px;">` : ""}
       ${isOwner ? "<br><em>(Eigene Location)</em>" : ""}
@@ -99,6 +107,7 @@ async function loadLocationsWithRadius(lat, lon, radiusKm) {
   document.getElementById("loader").style.display = "none";
 }
 
+// Authentication and UI updates
 async function updateAuthUI() {
   const user = supabase.auth.user();
   const loggedIn = !!user;
@@ -108,174 +117,6 @@ async function updateAuthUI() {
   ["login-btn", "register-btn"].forEach(id => document.getElementById(id).style.display = loggedIn ? "none" : "inline");
   ["logout-btn", "profile-btn", "location-btn"].forEach(id => document.getElementById(id).style.display = loggedIn ? "inline" : "none");
 }
-
-let authMode = "login";
-
-function toggleAuthModal() {
-  document.getElementById("auth-modal").classList.toggle("hidden");
-  document.getElementById("auth-status").textContent = "";
-}
-
-function switchAuthMode() {
-  authMode = authMode === "login" ? "register" : "login";
-  document.getElementById("auth-title").textContent = authMode === "login" ? "Login" : "Registrieren";
-  document.getElementById("auth-submit-btn").textContent = authMode === "login" ? "Anmelden" : "Registrieren";
-  document.getElementById("toggle-auth-mode").innerHTML =
-    authMode === "login"
-      ? 'Noch kein Konto? <a href="#" onclick="switchAuthMode()">Registrieren</a>'
-      : 'Bereits registriert? <a href="#" onclick="switchAuthMode()">Login</a>';
-}
-
-function toggleProfileModal() {
-  document.getElementById("profile-modal").classList.toggle("hidden");
-  loadProfileData();
-}
-
-function toggleLocationModal() {
-  document.getElementById("location-modal").classList.toggle("hidden");
-}
-
-document.getElementById("auth-form").addEventListener("submit", async (e) => {
-  e.preventDefault();
-  const email = document.getElementById("auth-email").value;
-  const password = document.getElementById("auth-password").value;
-  const statusEl = document.getElementById("auth-status");
-
-  try {
-    let userData, error;
-    if (authMode === "login") {
-      ({ user: userData, error } = await supabase.auth.signIn({ email, password }));
-    } else {
-      ({ user: userData, error } = await supabase.auth.signUp({ email, password }));
-    }
-
-    if (error) throw error;
-
-    if (authMode === "register") alert("Registrierung erfolgreich. Bitte E-Mail bestätigen.");
-    toggleAuthModal();
-    updateAuthUI();
-  } catch (err) {
-    statusEl.textContent = "Fehler: " + err.message;
-  }
-});
-
-document.getElementById("profile-form").addEventListener("submit", async (e) => {
-  e.preventDefault();
-  const user = supabase.auth.user();
-  if (!user) {
-    document.getElementById("profile-status").textContent = "Bitte einloggen.";
-    return;
-  }
-
-  const name = document.getElementById("profile-name").value;
-  const file = document.getElementById("profile-image").files[0];
-  let imageUrl = null;
-
-  if (file && file.size > 0) {
-    const path = `${user.id}/${Date.now()}_${file.name}`;
-    const { error: uploadError } = await supabase.storage
-      .from("avatars")
-      .upload(path, file, {
-        upsert: true,
-        contentType: file.type || "image/png"
-      });
-
-    if (uploadError) {
-      document.getElementById("profile-status").textContent = "Fehler beim Hochladen: " + uploadError.message;
-      return;
-    }
-
-    imageUrl = supabase.storage.from("avatars").getPublicUrl(path).publicURL;
-  }
-
-  const { error } = await supabase
-    .from("profiles")
-    .upsert([{ user_id: user.id, name, avatar_url: imageUrl }]);
-
-  if (!error) {
-    document.getElementById("profile-status").textContent = "Profil gespeichert!";
-    if (imageUrl) {
-      document.getElementById("profile-image-preview").innerHTML = `<img src="${imageUrl}" alt="Profilbild">`;
-    }
-  } else {
-    document.getElementById("profile-status").textContent = "Fehler: " + error.message;
-  }
-});
-
-async function loadProfileData() {
-  const user = supabase.auth.user();
-  if (!user) return;
-
-  const { data, error } = await supabase
-    .from("profiles")
-    .select("*")
-    .eq("user_id", user.id)
-    .limit(1);
-
-  if (!error && data.length > 0) {
-    const profile = data[0];
-    document.getElementById("profile-name").value = profile.name || "";
-    if (profile.avatar_url) {
-      document.getElementById("profile-image-preview").innerHTML = `<img src="${profile.avatar_url}" alt="Profilbild">`;
-    }
-  }
-}
-
-document.getElementById("location-form").addEventListener("submit", async (e) => {
-  e.preventDefault();
-  const user = supabase.auth.user();
-  if (!user) {
-    document.getElementById("loc-status").textContent = "Bitte einloggen.";
-    return;
-  }
-
-  const name = document.getElementById("loc-name").value;
-  const address = document.getElementById("loc-address").value;
-  const hours = document.getElementById("loc-hours").value;
-  const description = document.getElementById("loc-description").value;
-  const contact = document.getElementById("loc-contact").value;
-  const imageFile = document.getElementById("loc-image").files[0];
-  const coords = marker.getLatLng();
-  let imageUrl = null;
-
-  if (imageFile && imageFile.size > 0) {
-    const path = `${user.id}/${Date.now()}_${imageFile.name}`;
-    const { error: uploadError } = await supabase.storage
-      .from("location-images")
-      .upload(path, imageFile, {
-        upsert: true,
-        contentType: imageFile.type || "image/jpeg"
-      });
-
-    if (uploadError) {
-      document.getElementById("loc-status").textContent = "Fehler beim Hochladen: " + uploadError.message;
-      return;
-    }
-
-    imageUrl = supabase.storage.from("location-images").getPublicUrl(path).publicURL;
-  }
-
-  const { error } = await supabase.from("Locations").insert([{
-    name, address, hours, description, contact,
-    image_url: imageUrl,
-    latitude: coords.lat,
-    longitude: coords.lng,
-    user_id: user.id
-  }]);
-
-  if (!error) {
-    const m = L.marker([coords.lat, coords.lng]).addTo(map);
-    m.bindPopup(`
-      <strong>${name}</strong><br>${description}<br><em>${hours}</em><br>${address}<br>${contact}<br>
-      ${imageUrl ? `<img src="${imageUrl}" style="max-width:100px;">` : ""}
-    `);
-    supabaseMarkers.push(m);
-    document.getElementById("loc-status").textContent = "Gespeichert!";
-    toggleLocationModal();
-  } else {
-    document.getElementById("loc-status").textContent = "Fehler: " + error.message;
-  }
-});
 
 document.getElementById("login-btn").onclick = toggleAuthModal;
 document.getElementById("register-btn").onclick = () => {
