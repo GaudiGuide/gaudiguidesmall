@@ -26,7 +26,7 @@
   </header>
 
   <div class="map-wrapper">
-    <div id="map"></div>
+    <div id="map" style="height: 500px;"></div>
   </div>
 
   <!-- Radius-Slider -->
@@ -35,7 +35,7 @@
     <input type="range" id="radius-range" min="1" max="50" value="5" />
   </div>
 
-  <div id="loader">Lade Locations...</div>
+  <div id="loader" style="display: none;">Lade Locations...</div>
 
   <!-- Auth Modal -->
   <div id="auth-modal" class="modal hidden">
@@ -64,12 +64,9 @@
       <form id="profile-form">
         <label>Name:</label>
         <input type="text" id="profile-name" />
-
         <label>Profilbild:</label>
         <input type="file" id="profile-image" accept="image/*" />
-
         <div id="profile-image-preview" style="margin-top: 0.5em;"></div>
-
         <button type="submit">Speichern</button>
         <div id="profile-status" class="status"></div>
       </form>
@@ -90,22 +87,18 @@
         <input type="text" id="loc-hours" />
         <label>Beschreibung:</label>
         <textarea id="loc-description"></textarea>
-
         <label>Kontakt-E-Mail:</label>
         <input type="email" id="loc-contact" />
-
         <label>Bild:</label>
         <input type="file" id="loc-image" accept="image/*" />
-
         <div id="location-image-preview" style="margin-top: 0.5em;"></div>
-
         <button type="submit">Hinzufügen</button>
         <div id="loc-status" class="status"></div>
       </form>
     </div>
   </div>
 
-  <!-- JS-Skripte -->
+  <!-- JS Libraries -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@1"></script>
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="https://unpkg.com/leaflet-geosearch@3.1.0/dist/geosearch.umd.js"></script>
