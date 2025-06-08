@@ -15,8 +15,8 @@ function initMap(position) {
   L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png").addTo(map);
   marker = L.marker([userLat, userLon]).addTo(map);
 
-  const provider = new OpenStreetMapProvider();
-  const searchControl = new GeoSearchControl({ provider });
+  const provider = new window.GeoSearch.OpenStreetMapProvider();
+  const searchControl = new window.GeoSearch.GeoSearchControl({ provider });
   map.addControl(searchControl);
 
   map.on("geosearch/showlocation", function (result) {
@@ -39,7 +39,9 @@ function drawCircle(lat, lon) {
 
   circle = L.circle(center, {
     radius: radiusKm * 1000,
-    color: "green", fillColor: "#aaffaa", fillOpacity: 0.3,
+    color: "green",
+    fillColor: "#aaffaa",
+    fillOpacity: 0.3,
   }).addTo(map);
 
   loadLocationsWithRadius(center.lat, center.lng, radiusKm);
@@ -53,7 +55,10 @@ async function loadLocationsWithRadius(lat, lon, radiusKm) {
     radius_km: radiusKm,
   });
 
-  if (error) return alert("Fehler: " + error.message);
+  if (error) {
+    alert("Fehler beim Laden der Locations: " + error.message);
+    return;
+  }
 
   supabaseMarkers.forEach((m) => map.removeLayer(m));
   supabaseMarkers = [];
