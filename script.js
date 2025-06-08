@@ -3,7 +3,7 @@ const supabase = window.supabase.createClient(
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxmcHRkamVzZXBxZG9vbGN4cHB3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQ4MDk3OTMsImV4cCI6MjA2MDM4NTc5M30.i67qj_tTDvx9_TJiWHCo_RT8EnS71ZV7LpJIvlAXiFg"
 );
 
-let map, marker = null, circle = null;
+let map, userMarker = null, circle = null;
 let userLat = 51.1657, userLon = 10.4515;
 let radiusKm = 5;
 let showCircle = true;
@@ -16,7 +16,10 @@ function initMap(position) {
   map = L.map("map").setView([userLat, userLon], 13);
   L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png").addTo(map);
 
-  marker = L.marker([userLat, userLon]).addTo(map);
+  userMarker = L.marker([userLat, userLon])
+    .addTo(map)
+    .bindPopup("📍 Du bist hier")
+    .openPopup();
 
   const provider = new window.GeoSearch.OpenStreetMapProvider({
     params: { "accept-language": "de", countrycodes: "de" },
@@ -32,23 +35,30 @@ function initMap(position) {
 
   map.addControl(searchControl);
 
-  map.on("geosearch/showlocation", (result) =>
-    drawCircle(result.location.y, result.location.x)
-  );
+  map.on("geosearch/showlocation", (result) => {
+    userLat = result.location.y;
+    userLon = result.location.x;
+    drawCircle(userLat, userLon);
+  });
 
   drawCircle();
 }
 
-function drawCircle(lat, lon) {
+function drawCircle(lat = userLat, lon = userLon) {
   if (!map) return;
 
-  const center = lat && lon ? L.latLng(lat, lon) : marker.getLatLng();
+  const center = L.latLng(lat, lon);
 
-  if (lat && lon && marker) map.removeLayer(marker);
-  if (lat && lon) marker = L.marker(center).addTo(map);
+  if (userMarker) map.removeLayer(userMarker);
+  userMarker = L.marker(center)
+    .addTo(map)
+    .bindPopup("📍 Du bist hier")
+    .openPopup();
+
   if (circle) map.removeLayer(circle);
 
   if (showCircle) {
+    console.log("🟢 Kreis wird gezeichnet bei:", center.lat, center.lng, "Radius:", radiusKm);
     circle = L.circle(center, {
       radius: radiusKm * 1000,
       color: "green",
@@ -70,8 +80,9 @@ async function loadLocationsWithRadius(lat, lon, radiusKm) {
   });
 
   if (error) {
-    console.error("Fehler beim Laden der Locations:", error);
+    console.error("❌ Fehler beim Laden der Locations:", error);
     alert("Fehler beim Laden der Locations: " + error.message);
+    document.getElementById("loader").style.display = "none";
     return;
   }
 
@@ -82,7 +93,6 @@ async function loadLocationsWithRadius(lat, lon, radiusKm) {
   data.forEach((loc) => {
     const m = L.marker([loc.latitude, loc.longitude]).addTo(map);
     const isOwner = user && loc.user_id === user.id;
-
     m.bindPopup(`
       <strong>${loc.name}</strong><br>
       ${loc.description || ""}<br>
@@ -91,7 +101,6 @@ async function loadLocationsWithRadius(lat, lon, radiusKm) {
       ${loc.image_url ? `<img src="${loc.image_url}" style="max-width:100px;">` : ""}
       ${isOwner ? "<br><em>(Eigene Location)</em>" : ""}
     `);
-
     supabaseMarkers.push(m);
   });
 
@@ -103,11 +112,11 @@ function updateAuthUI() {
   const loggedIn = !!user;
   document.getElementById("user-display").textContent = loggedIn ? `👤 ${user.email}` : "";
 
-  ["login-btn", "register-btn"].forEach((id) => {
+  ["login-btn", "register-btn"].forEach(id => {
     document.getElementById(id).style.display = loggedIn ? "none" : "inline";
   });
 
-  ["logout-btn", "profile-btn", "location-btn"].forEach((id) => {
+  ["logout-btn", "profile-btn", "location-btn"].forEach(id => {
     document.getElementById(id).style.display = loggedIn ? "inline" : "none";
   });
 }
@@ -134,7 +143,7 @@ function toggleProfileModal() {
 }
 
 function loadProfileData() {
-  console.log("Profil laden noch nicht implementiert");
+  console.log("📄 Profil laden noch nicht implementiert");
 }
 
 function toggleLocationModal() {
@@ -149,18 +158,14 @@ document.getElementById("auth-form").addEventListener("submit", async (e) => {
   const status = document.getElementById("auth-status");
   status.textContent = "Wird verarbeitet...";
 
-  let result;
-  if (authMode === "login") {
-    result = await supabase.auth.signIn({ email, password });
-  } else {
-    result = await supabase.auth.signUp({ email, password });
-  }
+  const result = authMode === "login"
+    ? await supabase.auth.signIn({ email, password })
+    : await supabase.auth.signUp({ email, password });
 
   const { error } = result;
 
   if (error) {
     status.textContent = "Fehler: " + error.message;
-    console.error("Auth-Fehler:", error);
   } else {
     status.textContent = "Erfolg!";
     toggleAuthModal();
@@ -183,8 +188,7 @@ document.getElementById("location-form").addEventListener("submit", async (e) =>
   const description = document.getElementById("loc-description").value;
   const contact = document.getElementById("loc-contact").value;
   const imageFile = document.getElementById("loc-image").files[0];
-  const coords = marker.getLatLng();
-
+  const coords = userMarker.getLatLng();
   let imageUrl = null;
 
   if (imageFile && imageFile.size > 0) {
@@ -223,11 +227,11 @@ document.getElementById("location-form").addEventListener("submit", async (e) =>
   } else {
     document.getElementById("loc-status").textContent = "Gespeichert!";
     toggleLocationModal();
-    drawCircle(); // neu laden
+    drawCircle(); // reload after insert
   }
 });
 
-// === Buttons verbinden ===
+// === Event Bindings ===
 document.getElementById("login-btn").onclick = toggleAuthModal;
 document.getElementById("register-btn").onclick = () => {
   authMode = "register";
@@ -241,21 +245,18 @@ document.getElementById("logout-btn").onclick = async () => {
 document.getElementById("profile-btn").onclick = toggleProfileModal;
 document.getElementById("location-btn").onclick = toggleLocationModal;
 
-// === Umkreis anzeigen/verstecken ===
 document.getElementById("radius-toggle").addEventListener("click", (e) => {
   e.preventDefault();
   showCircle = !showCircle;
   drawCircle();
 });
 
-// === Radius-Slider live-Update ===
 document.getElementById("radius-range").addEventListener("input", (e) => {
   radiusKm = parseInt(e.target.value, 10);
   document.getElementById("radius-value").textContent = radiusKm;
   drawCircle();
 });
 
-// === Startkarte laden ===
 window.onload = () => {
   navigator.geolocation.getCurrentPosition(
     initMap,
