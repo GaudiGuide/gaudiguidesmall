@@ -15,28 +15,35 @@ function initMap(position) {
   L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png").addTo(map);
   marker = L.marker([userLat, userLon]).addTo(map);
 
-  // ✅ GeoSearch sicher initialisieren
-  if (
-    !window.GeoSearch ||
-    typeof window.GeoSearch.OpenStreetMapProvider !== 'function' ||
-    typeof window.GeoSearch.GeoSearchControl !== 'function'
-  ) {
-    console.error("❌ GeoSearch nicht korrekt geladen.");
-    alert("Die Suchfunktion konnte nicht geladen werden. Bitte Seite neu laden.");
-    return;
+  try {
+    if (
+      !window.GeoSearch ||
+      typeof window.GeoSearch.OpenStreetMapProvider !== 'function' ||
+      typeof window.GeoSearch.GeoSearchControl !== 'function'
+    ) {
+      throw new Error("GeoSearch nicht korrekt geladen.");
+    }
+
+    const provider = new window.GeoSearch.OpenStreetMapProvider();
+    const searchControl = new window.GeoSearch.GeoSearchControl({
+      provider,
+      style: 'bar',
+    });
+
+    if (typeof searchControl.addTo === 'function') {
+      map.addControl(searchControl);
+    } else {
+      throw new Error("GeoSearchControl konnte nicht hinzugefügt werden.");
+    }
+
+    map.on("geosearch/showlocation", function (result) {
+      drawCircle(result.location.y, result.location.x);
+    });
+
+  } catch (err) {
+    console.error("❌ GeoSearch Fehler:", err.message);
+    alert("Die Suchfunktion konnte nicht geladen werden.");
   }
-
-  const provider = new window.GeoSearch.OpenStreetMapProvider();
-  const searchControl = new window.GeoSearch.GeoSearchControl({
-    provider,
-    style: 'bar',
-  });
-
-  map.addControl(searchControl);
-
-  map.on("geosearch/showlocation", function (result) {
-    drawCircle(result.location.y, result.location.x);
-  });
 
   document.getElementById("radius").addEventListener("input", () => drawCircle());
   drawCircle();
@@ -164,8 +171,10 @@ document.getElementById("profile-form").addEventListener("submit", async (e) => 
 });
 
 window.onload = () => {
-  navigator.geolocation.getCurrentPosition(initMap, () => {
-    initMap({ coords: { latitude: userLat, longitude: userLon } });
-  });
-  updateAuthUI();
+  setTimeout(() => {
+    navigator.geolocation.getCurrentPosition(initMap, () => {
+      initMap({ coords: { latitude: userLat, longitude: userLon } });
+    });
+    updateAuthUI();
+  }, 300); // kurze Verzögerung für GeoSearch-Script
 };
