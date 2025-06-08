@@ -1,6 +1,6 @@
 const supabase = window.supabase.createClient(
   "https://lfptdjesepqdoolcxppw.supabase.co",
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxmcHRkamVzZXBxZG9vbGN4cHB3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQ4MDk3OTMsImV4cCI6MjA2MDM4NTc5M30.i67qj_tTDvx9_TJiWHCo_RT8EnS71ZV7LpJIvlAXiFg" // ← Ersetze durch deinen echten anon key
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxmcHRkamVzZXBxZG9vbGN4cHB3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQ4MDk3OTMsImV4cCI6MjA2MDM4NTc5M30.i67qj_tTDvx9_TJiWHCo_RT8EnS71ZV7LpJIvlAXiFg"
 );
 
 let map, marker = null, circle = null, showCircle = true;
@@ -15,7 +15,6 @@ function initMap(position) {
   L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png").addTo(map);
   marker = L.marker([userLat, userLon]).addTo(map);
 
-  // ✅ GeoSearch robust einbinden
   try {
     if (!window.GeoSearch || !window.GeoSearch.OpenStreetMapProvider) {
       throw new Error("GeoSearch nicht verfügbar.");
@@ -91,7 +90,7 @@ async function loadLocationsWithRadius(lat, lon, radiusKm) {
     return;
   }
 
-  const { data: { user } } = await supabase.auth.getUser();
+  const user = supabase.auth.user();
   supabaseMarkers.forEach((m) => map.removeLayer(m));
   supabaseMarkers = [];
 
@@ -112,9 +111,9 @@ async function loadLocationsWithRadius(lat, lon, radiusKm) {
 }
 
 async function updateAuthUI() {
-  const { data: { session } } = await supabase.auth.getSession();
-  const loggedIn = !!session;
-  const email = session?.user?.email;
+  const user = supabase.auth.user();
+  const loggedIn = !!user;
+  const email = user?.email;
 
   document.getElementById("user-display").textContent = loggedIn ? `👤 ${email}` : "";
   ["login-btn", "register-btn"].forEach(id => document.getElementById(id).style.display = loggedIn ? "none" : "inline");
@@ -154,8 +153,13 @@ document.getElementById("auth-form").addEventListener("submit", async (e) => {
   const statusEl = document.getElementById("auth-status");
 
   try {
-    const fn = authMode === "login" ? supabase.auth.signInWithPassword : supabase.auth.signUp;
-    const { error } = await fn({ email, password });
+    let userData, error;
+    if (authMode === "login") {
+      ({ user: userData, error } = await supabase.auth.signIn({ email, password }));
+    } else {
+      ({ user: userData, error } = await supabase.auth.signUp({ email, password }));
+    }
+
     if (error) throw error;
 
     if (authMode === "register") alert("Registrierung erfolgreich. Bitte E-Mail bestätigen.");
@@ -170,13 +174,13 @@ document.getElementById("profile-form").addEventListener("submit", async (e) => 
   e.preventDefault();
   const name = document.getElementById("profile-name").value;
   const address = document.getElementById("profile-address").value;
-  const { data: { user } } = await supabase.auth.getUser();
+  const user = supabase.auth.user();
   await supabase.from("profiles").upsert([{ user_id: user.id, name, address }]);
   document.getElementById("profile-status").textContent = "Profil gespeichert!";
 });
 
 async function loadProfileData() {
-  const { data: { user } } = await supabase.auth.getUser();
+  const user = supabase.auth.user();
   if (!user) return;
   const { data, error } = await supabase.from("profiles").select("*").eq("user_id", user.id).single();
   if (!error && data) {
@@ -192,7 +196,7 @@ document.getElementById("location-form").addEventListener("submit", async (e) =>
   const hours = document.getElementById("loc-hours").value;
   const description = document.getElementById("loc-description").value;
   const coords = marker.getLatLng();
-  const { data: { user } } = await supabase.auth.getUser();
+  const user = supabase.auth.user();
 
   const { error } = await supabase.from("Locations").insert([{
     name,
