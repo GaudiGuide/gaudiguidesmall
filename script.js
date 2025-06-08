@@ -95,6 +95,10 @@ document.getElementById("location-form").addEventListener("submit", async (e) =>
   const { data: { user }, error: userError } = await supabase.auth.getUser();
   console.log("👤 Aktueller User:", user);
   if (userError) console.error("❌ Fehler beim Laden des Users:", userError);
+
+  const session = await supabase.auth.getSession();
+  console.log("🧾 Session Info:", session);
+
   if (!user) return document.getElementById("loc-status").textContent = "Bitte einloggen.";
 
   const name = document.getElementById("loc-name").value;
@@ -138,31 +142,3 @@ document.getElementById("location-form").addEventListener("submit", async (e) =>
     document.getElementById("loc-status").textContent = "Fehler: " + error.message;
   }
 });
-
-// UI Events
-document.getElementById("login-btn").onclick = toggleAuthModal;
-document.getElementById("register-btn").onclick = () => { authMode = "register"; switchAuthMode(); toggleAuthModal(); };
-document.getElementById("logout-btn").onclick = async () => { await supabase.auth.signOut(); updateAuthUI(); };
-document.getElementById("profile-btn").onclick = toggleProfileModal;
-document.getElementById("location-btn").onclick = toggleLocationModal;
-
-// Modals
-function toggleAuthModal() {
-  document.getElementById("auth-modal").classList.toggle("hidden");
-  document.getElementById("auth-status").textContent = "";
-}
-function switchAuthMode() {
-  authMode = authMode === "login" ? "register" : "login";
-  document.getElementById("auth-title").textContent = authMode === "login" ? "Login" : "Registrieren";
-  document.getElementById("auth-submit-btn").textContent = authMode === "login" ? "Anmelden" : "Registrieren";
-  document.getElementById("toggle-auth-mode").innerHTML = authMode === "login"
-    ? 'Noch kein Konto? <a href=\"#\" onclick=\"switchAuthMode()\">Registrieren</a>'
-    : 'Bereits registriert? <a href=\"#\" onclick=\"switchAuthMode()\">Login</a>';
-}
-function toggleProfileModal() { document.getElementById("profile-modal").classList.toggle("hidden"); loadProfileData(); }
-function toggleLocationModal() { document.getElementById("location-modal").classList.toggle("hidden"); }
-
-window.onload = () => {
-  navigator.geolocation.getCurrentPosition(initMap, () => initMap({ coords: { latitude: userLat, longitude: userLon } }));
-  updateAuthUI();
-};
