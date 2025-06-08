@@ -1,4 +1,4 @@
-const supabase = window.supabase.createClient("https://lfptdjesepqdoolcxppw.supabase.co", "public-anon-key");
+const supabase = window.supabase.createClient("https://lfptdjesepqdoolcxppw.supabase.co", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxmcHRkamVzZXBxZG9vbGN4cHB3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQ4MDk3OTMsImV4cCI6MjA2MDM4NTc5M30.i67qj_tTDvx9_TJiWHCo_RT8EnS71ZV7LpJIvlAXiFg");
 
 let map, marker = null, circle = null, showCircle = true;
 let userLat = 51.1657, userLon = 10.4515;
