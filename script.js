@@ -15,8 +15,22 @@ function initMap(position) {
   L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png").addTo(map);
   marker = L.marker([userLat, userLon]).addTo(map);
 
+  // ✅ Sicherstellen, dass GeoSearch geladen ist
+  if (
+    typeof window.GeoSearch === "undefined" ||
+    typeof window.GeoSearch.OpenStreetMapProvider !== "function" ||
+    typeof window.GeoSearch.GeoSearchControl !== "function"
+  ) {
+    console.error("GeoSearch wurde nicht korrekt geladen.");
+    alert("GeoSearch konnte nicht geladen werden. Bitte Seite neu laden.");
+    return;
+  }
+
   const provider = new window.GeoSearch.OpenStreetMapProvider();
-  const searchControl = new window.GeoSearch.GeoSearchControl({ provider });
+  const searchControl = new window.GeoSearch.GeoSearchControl({
+    provider: provider,
+    style: 'bar',
+  });
   map.addControl(searchControl);
 
   map.on("geosearch/showlocation", function (result) {
