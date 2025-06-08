@@ -5,7 +5,6 @@ body {
   color: #233b20;
 }
 
-/* Header + Logo */
 header {
   background-color: #233b20;
   padding: 2em 1em 1.5em;
@@ -26,7 +25,6 @@ header {
   max-width: 200px;
 }
 
-/* Auth-Links oben rechts */
 .auth-links {
   position: absolute;
   top: 0.8em;
@@ -51,11 +49,9 @@ header {
   color: #b28e61;
 }
 
-/* Karte */
 .map-wrapper {
   display: flex;
   justify-content: center;
-  align-items: flex-start;
   flex-wrap: wrap;
 }
 
@@ -67,7 +63,6 @@ header {
   border-radius: 8px;
 }
 
-/* Ladeanzeige */
 #loader {
   text-align: center;
   padding: 1em;
@@ -75,7 +70,6 @@ header {
   font-weight: bold;
 }
 
-/* Formularbereiche */
 .container {
   display: flex;
   justify-content: space-around;
@@ -94,11 +88,6 @@ header {
   box-shadow: 0 0 5px rgba(0,0,0,0.1);
 }
 
-.form-section h3 {
-  margin-top: 0;
-}
-
-/* Formularelemente */
 label,
 input,
 button,
@@ -135,7 +124,6 @@ button:hover {
   background-color: #586d42;
 }
 
-/* Statusnachrichten */
 .status {
   text-align: center;
   font-size: 0.95em;
@@ -150,7 +138,47 @@ button:hover {
   color: green;
 }
 
-/* Responsive Design */
+.modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0,0,0,0.6);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 999;
+}
+
+.modal.hidden {
+  display: none;
+}
+
+.modal-content {
+  background: white;
+  padding: 2em;
+  border-radius: 10px;
+  width: 90%;
+  max-width: 400px;
+  position: relative;
+  box-shadow: 0 0 20px rgba(0,0,0,0.3);
+}
+
+.close-btn {
+  position: absolute;
+  top: 0.5em;
+  right: 1em;
+  font-size: 1.5em;
+  cursor: pointer;
+  color: #999;
+}
+
+#toggle-auth-mode {
+  text-align: center;
+  margin-top: 1em;
+}
+
 @media (max-width: 768px) {
   .container {
     flex-direction: column;
