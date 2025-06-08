@@ -50,6 +50,19 @@ header {
   background-color: rgba(178, 142, 97, 0.1);
 }
 
+#radius-toggle {
+  background-color: #b28e61;
+  color: white;
+  padding: 0.4em 0.7em;
+  border-radius: 5px;
+  font-weight: bold;
+  text-decoration: none;
+}
+
+#radius-toggle:hover {
+  background-color: #a27a4f;
+}
+
 #user-display {
   font-weight: bold;
   margin-right: 0.5em;
@@ -68,6 +81,21 @@ header {
   margin: 1em auto;
   border: 2px solid #233b20;
   border-radius: 8px;
+}
+
+.radius-control {
+  text-align: center;
+  margin: 1em;
+}
+
+#radius-range {
+  width: 300px;
+  margin: 0.5em auto;
+}
+
+#radius-value {
+  font-weight: bold;
+  color: #233b20;
 }
 
 #loader {
@@ -159,7 +187,6 @@ button:hover {
   color: green;
 }
 
-/* NEU: Bildvorschau für Profil & Location */
 #profile-image-preview img,
 #location-image-preview img {
   max-width: 100%;
@@ -168,10 +195,20 @@ button:hover {
   margin-top: 0.5em;
 }
 
-/* NEU: Fix für GeoSearch/Popups */
 .leaflet-control-geosearch {
   z-index: 500 !important;
 }
 .leaflet-popup {
   z-index: 1000 !important;
+}
+
+@media (max-width: 600px) {
+  #map {
+    width: 95%;
+    height: 400px;
+  }
+
+  #radius-range {
+    width: 90%;
+  }
 }
