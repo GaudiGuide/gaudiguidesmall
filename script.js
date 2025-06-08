@@ -15,7 +15,7 @@ function initMap(position) {
   map = L.map("map").setView([userLat, userLon], 13);
   L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png").addTo(map);
 
-  userMarker = L.marker([userLat, userLon]).addTo(map).bindPopup("📍 Du bist hier").openPopup();
+  userMarker = L.marker([userLat, userLon]).addTo(map).bindPopup("\ud83d\udccd Du bist hier").openPopup();
 
   const provider = new window.GeoSearch.OpenStreetMapProvider({ params: { "accept-language": "de", countrycodes: "de" } });
   const searchControl = new window.GeoSearch.GeoSearchControl({ provider, style: "bar", searchLabel: "Adresse eingeben…", autoComplete: true, autoCompleteDelay: 300 });
@@ -34,7 +34,7 @@ function drawCircle(lat = userLat, lon = userLon) {
   if (!map) return;
   const center = L.latLng(lat, lon);
   if (userMarker) map.removeLayer(userMarker);
-  userMarker = L.marker(center).addTo(map).bindPopup("📍 Du bist hier").openPopup();
+  userMarker = L.marker(center).addTo(map).bindPopup("\ud83d\udccd Du bist hier").openPopup();
   if (circle) map.removeLayer(circle);
   if (showCircle) {
     circle = L.circle(center, {
@@ -55,7 +55,7 @@ async function loadLocationsWithRadius(lat, lon, radiusKm) {
     radius_km: radiusKm
   });
   if (error) {
-    console.error("❌ Fehler beim Laden der Locations:", error);
+    console.error("\u274c Fehler beim Laden der Locations:", error);
     alert("Fehler beim Laden der Locations: " + error.message);
     document.getElementById("loader").style.display = "none";
     return;
@@ -84,7 +84,7 @@ async function loadLocationsWithRadius(lat, lon, radiusKm) {
 function updateAuthUI() {
   const user = supabase.auth.user();
   const loggedIn = !!user;
-  document.getElementById("user-display").textContent = loggedIn ? `👤 ${user.email}` : "";
+  document.getElementById("user-display").textContent = loggedIn ? `\ud83d\udc64 ${user.email}` : "";
   ["login-btn", "register-btn"].forEach(id => document.getElementById(id).style.display = loggedIn ? "none" : "inline");
   ["logout-btn", "profile-btn", "location-btn"].forEach(id => document.getElementById(id).style.display = loggedIn ? "inline" : "none");
 }
@@ -168,8 +168,28 @@ document.getElementById("location-form").addEventListener("submit", async (e) =>
   const description = document.getElementById("loc-description").value;
   const contact = document.getElementById("loc-contact").value;
   const imageFile = document.getElementById("loc-image").files[0];
-  const coords = userMarker.getLatLng();
   let imageUrl = null;
+
+  // Geocode-Adresse
+  let coords = null;
+  try {
+    const geoRes = await fetch(`/api/geocode?q=${encodeURIComponent(address)}`);
+    const geoData = await geoRes.json();
+
+    if (!geoData.length) {
+      document.getElementById("loc-status").textContent = "Adresse nicht gefunden!";
+      return;
+    }
+
+    coords = {
+      lat: parseFloat(geoData[0].lat),
+      lng: parseFloat(geoData[0].lon)
+    };
+  } catch (err) {
+    console.error("Geocoding-Fehler:", err);
+    document.getElementById("loc-status").textContent = "Fehler bei der Adresssuche!";
+    return;
+  }
 
   const { data: profile } = await supabase.from("profiles").select("name").eq("user_id", user.id).single();
 
