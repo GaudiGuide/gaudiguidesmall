@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Gaudi-Guide</title>
 
-  <!-- Styles -->
   <link rel="stylesheet" href="style.css" />
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <link rel="stylesheet" href="https://unpkg.com/leaflet-geosearch@3.1.0/dist/geosearch.css" />
@@ -22,6 +21,7 @@
       <a href="#" id="logout-btn" style="display: none;">Logout</a>
       <a href="#" id="profile-btn" style="display: none;">Profil</a>
       <a href="#" id="location-btn" style="display: none;">Location erstellen</a>
+      <a href="#" id="radius-toggle">Umkreis zeigen</a>
     </div>
   </header>
 
@@ -31,7 +31,7 @@
 
   <div id="loader">Lade Locations...</div>
 
-  <!-- Login-Modal -->
+  <!-- Auth -->
   <div id="auth-modal" class="modal hidden">
     <div class="modal-content">
       <span class="close-btn" onclick="toggleAuthModal()">&times;</span>
@@ -50,34 +50,36 @@
     </div>
   </div>
 
-  <!-- Profil-Modal -->
+  <!-- Profil -->
   <div id="profile-modal" class="modal hidden">
     <div class="modal-content">
       <span class="close-btn" onclick="toggleProfileModal()">&times;</span>
       <h3>Profil bearbeiten</h3>
       <form id="profile-form">
-        <label for="profile-name">Name:</label>
+        <label>Name:</label>
         <input type="text" id="profile-name" />
-        <label for="profile-address">Adresse:</label>
+        <label>Adresse:</label>
         <input type="text" id="profile-address" />
-        <label for="profile-pic">Bild:</label>
-        <input type="file" id="profile-pic" />
         <button type="submit">Speichern</button>
         <div id="profile-status" class="status"></div>
       </form>
     </div>
   </div>
 
-  <!-- Location-Modal -->
+  <!-- Location -->
   <div id="location-modal" class="modal hidden">
     <div class="modal-content">
       <span class="close-btn" onclick="toggleLocationModal()">&times;</span>
       <h3>Neue Location</h3>
       <form id="location-form">
-        <label for="loc-name">Name:</label>
+        <label>Name:</label>
         <input type="text" id="loc-name" required />
-        <label for="loc-address">Adresse:</label>
+        <label>Adresse:</label>
         <input type="text" id="loc-address" required />
+        <label>Öffnungszeiten:</label>
+        <input type="text" id="loc-hours" />
+        <label>Beschreibung:</label>
+        <textarea id="loc-description"></textarea>
         <button type="submit">Hinzufügen</button>
         <div id="loc-status" class="status"></div>
       </form>
