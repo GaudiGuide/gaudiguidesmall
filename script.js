@@ -15,7 +15,13 @@ function initMap(position) {
   marker = L.marker([userLat, userLon]).addTo(map);
 
   const provider = new window.GeoSearch.OpenStreetMapProvider({ params: { 'accept-language': 'de', countrycodes: 'de' }});
-  const searchControl = new window.GeoSearch.GeoSearchControl({ provider, style: "bar", searchLabel: "Adresse eingeben…", autoComplete: true, autoCompleteDelay: 300 });
+  const searchControl = new window.GeoSearch.GeoSearchControl({
+    provider,
+    style: "bar",
+    searchLabel: "Adresse eingeben…",
+    autoComplete: true,
+    autoCompleteDelay: 300
+  });
   map.addControl(searchControl);
 
   map.on("geosearch/showlocation", (result) => drawCircle(result.location.y, result.location.x));
@@ -30,13 +36,22 @@ function drawCircle(lat, lon) {
   if (lat && lon && marker) map.removeLayer(marker);
   if (lat && lon) marker = L.marker(center).addTo(map);
   if (circle) map.removeLayer(circle);
-  if (showCircle) circle = L.circle(center, { radius: radiusKm * 1000, color: "green", fillColor: "#aaffaa", fillOpacity: 0.3 }).addTo(map);
+  if (showCircle) circle = L.circle(center, {
+    radius: radiusKm * 1000,
+    color: "green",
+    fillColor: "#aaffaa",
+    fillOpacity: 0.3
+  }).addTo(map);
   loadLocationsWithRadius(center.lat, center.lng, radiusKm);
 }
 
 async function loadLocationsWithRadius(lat, lon, radiusKm) {
   document.getElementById("loader").style.display = "block";
-  const { data, error } = await supabase.rpc("get_locations_within_radius", { lat_input: lat, lon_input: lon, radius_km: radiusKm });
+  const { data, error } = await supabase.rpc("get_locations_within_radius", {
+    lat_input: lat,
+    lon_input: lon,
+    radius_km: radiusKm
+  });
   if (error) {
     console.error("❌ Fehler beim Laden der Locations:", error);
     alert("Fehler beim Laden der Locations: " + error.message);
@@ -64,8 +79,10 @@ async function updateAuthUI() {
   const user = supabase.auth.user();
   const loggedIn = !!user;
   document.getElementById("user-display").textContent = loggedIn ? `👤 ${user.email}` : "";
-  ["login-btn", "register-btn"].forEach(id => document.getElementById(id).style.display = loggedIn ? "none" : "inline");
-  ["logout-btn", "profile-btn", "location-btn"].forEach(id => document.getElementById(id).style.display = loggedIn ? "inline" : "none");
+  ["login-btn", "register-btn"].forEach(id =>
+    document.getElementById(id).style.display = loggedIn ? "none" : "inline");
+  ["logout-btn", "profile-btn", "location-btn"].forEach(id =>
+    document.getElementById(id).style.display = loggedIn ? "inline" : "none");
 }
 
 let authMode = "login";
@@ -86,24 +103,48 @@ function switchAuthMode() {
 
 function toggleProfileModal() {
   document.getElementById("profile-modal").classList.toggle("hidden");
+  // Dummy-Funktion, damit kein Fehler auftritt
   loadProfileData();
+}
+
+function loadProfileData() {
+  console.log("📄 Profil-Laden noch nicht implementiert");
 }
 
 function toggleLocationModal() {
   document.getElementById("location-modal").classList.toggle("hidden");
 }
 
-// FULL DEBUGGING FÜR LOCATION-FORMULAR
+document.getElementById("auth-form").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const email = document.getElementById("auth-email").value;
+  const password = document.getElementById("auth-password").value;
+  const status = document.getElementById("auth-status");
+  status.textContent = "Wird verarbeitet...";
+
+  let result;
+  if (authMode === "login") {
+    result = await supabase.auth.signIn({ email, password });
+  } else {
+    result = await supabase.auth.signUp({ email, password });
+  }
+
+  const { error, user } = result;
+
+  if (error) {
+    console.error("❌ Auth-Fehler:", error);
+    status.textContent = "Fehler: " + error.message;
+  } else {
+    status.textContent = "Erfolg!";
+    toggleAuthModal();
+    updateAuthUI();
+  }
+});
 
 document.getElementById("location-form").addEventListener("submit", async (e) => {
   e.preventDefault();
   console.log("🔍 DEBUG: Insert wird ausgelöst");
   const user = supabase.auth.user();
-  console.log("👤 Aktueller User:", user);
-
-  const session = supabase.auth.session();
-  console.log("🧾 Session Info:", session);
-
   if (!user) {
     document.getElementById("loc-status").textContent = "Bitte einloggen.";
     console.warn("⚠️ Kein Benutzer eingeloggt");
