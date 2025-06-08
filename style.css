@@ -158,3 +158,20 @@ button:hover {
 .success {
   color: green;
 }
+
+/* NEU: Bildvorschau für Profil & Location */
+#profile-image-preview img,
+#location-image-preview img {
+  max-width: 100%;
+  max-height: 200px;
+  border-radius: 8px;
+  margin-top: 0.5em;
+}
+
+/* NEU: Fix für GeoSearch/Popups */
+.leaflet-control-geosearch {
+  z-index: 500 !important;
+}
+.leaflet-popup {
+  z-index: 1000 !important;
+}
