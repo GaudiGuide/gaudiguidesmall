@@ -6,6 +6,7 @@ const supabase = window.supabase.createClient(
 let map, marker = null, circle = null, showCircle = true;
 let userLat = 51.1657, userLon = 10.4515;
 let supabaseMarkers = [];
+let radiusKm = 5;
 
 function initMap(position) {
   userLat = position.coords.latitude;
@@ -14,7 +15,7 @@ function initMap(position) {
   L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png").addTo(map);
   marker = L.marker([userLat, userLon]).addTo(map);
 
-  const provider = new window.GeoSearch.OpenStreetMapProvider({ params: { 'accept-language': 'de', countrycodes: 'de' }});
+  const provider = new window.GeoSearch.OpenStreetMapProvider({ params: { 'accept-language': 'de', countrycodes: 'de' } });
   const searchControl = new window.GeoSearch.GeoSearchControl({
     provider,
     style: "bar",
@@ -25,23 +26,41 @@ function initMap(position) {
   map.addControl(searchControl);
 
   map.on("geosearch/showlocation", (result) => drawCircle(result.location.y, result.location.x));
-  document.getElementById("radius-toggle").onclick = () => { showCircle = !showCircle; drawCircle(); };
+
+  // Umkreis ein-/ausblenden
+  document.getElementById("radius-toggle").onclick = () => {
+    showCircle = !showCircle;
+    drawCircle();
+  };
+
+  // Radius-Slider live updaten
+  const range = document.getElementById("radius-range");
+  const valueDisplay = document.getElementById("radius-value");
+  if (range && valueDisplay) {
+    range.addEventListener("input", (e) => {
+      radiusKm = parseInt(e.target.value, 10);
+      valueDisplay.textContent = radiusKm;
+      drawCircle();
+    });
+  }
+
   drawCircle();
 }
 
 function drawCircle(lat, lon) {
   if (!map) return;
-  const radiusKm = 5;
   const center = lat && lon ? L.latLng(lat, lon) : marker.getLatLng();
   if (lat && lon && marker) map.removeLayer(marker);
   if (lat && lon) marker = L.marker(center).addTo(map);
   if (circle) map.removeLayer(circle);
-  if (showCircle) circle = L.circle(center, {
-    radius: radiusKm * 1000,
-    color: "green",
-    fillColor: "#aaffaa",
-    fillOpacity: 0.3
-  }).addTo(map);
+  if (showCircle) {
+    circle = L.circle(center, {
+      radius: radiusKm * 1000,
+      color: "green",
+      fillColor: "#aaffaa",
+      fillOpacity: 0.3
+    }).addTo(map);
+  }
   loadLocationsWithRadius(center.lat, center.lng, radiusKm);
 }
 
@@ -103,7 +122,6 @@ function switchAuthMode() {
 
 function toggleProfileModal() {
   document.getElementById("profile-modal").classList.toggle("hidden");
-  // Dummy-Funktion, damit kein Fehler auftritt
   loadProfileData();
 }
 
